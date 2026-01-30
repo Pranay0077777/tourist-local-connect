@@ -1,0 +1,124 @@
+import { useState } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Card, CardContent, CardHeader, CardFooter } from "./ui/card";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
+
+interface GuideSignUpProps {
+    onSuccess: () => void;
+    onBack: () => void;
+}
+
+export function GuideSignUp({ onBack }: GuideSignUpProps) {
+    const [step, setStep] = useState(1);
+    const [formData, setFormData] = useState({
+        name: '', email: '', password: '', phone: '', city: '',
+        aadharNumber: '', hourlyRate: '', languages: '', specializations: '', dob: ''
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleNext = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Validation for Step 1
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            toast.error("Please enter a valid email address");
+            return;
+        }
+
+        if (formData.password.length < 6) {
+            toast.error("Password must be at least 6 characters long");
+            return;
+        }
+
+        if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
+            toast.error("Please enter a valid 10-digit phone number");
+            return;
+        }
+
+        setStep(2);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        try {
+            await api.register({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+                role: 'guide',
+                phone: formData.phone,
+                city: formData.city,
+                aadharNumber: formData.aadharNumber,
+                hourlyRate: formData.hourlyRate,
+                languages: formData.languages,
+                specializations: formData.specializations,
+                dob: formData.dob
+            });
+
+            // setCurrentUser(data.user); // Removed auto-login
+            toast.success("Registration Successful! Please log in.");
+            onBack(); // Redirect to login
+        } catch (error: any) {
+            console.error("Registration failed", error);
+            toast.error(error.message || "Registration failed. Try again.");
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-lg">
+                <CardHeader>
+                    <h2 className="text-xl font-bold text-green-700">Guide Registration</h2>
+                    <p className="text-sm text-gray-500">Step {step} of 2</p>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={step === 1 ? handleNext : handleSubmit} className="space-y-4">
+
+                        {step === 1 && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                                <Input name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                                <Input name="email" type="email" placeholder="Email Address" value={formData.email} onChange={handleChange} required />
+                                <Input name="dob" type="date" placeholder="Date of Birth" value={formData.dob} onChange={handleChange} required className="block" title="Date of Birth" />
+                                <Input name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+                                <Input name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleChange} required />
+                                <Input name="city" placeholder="City" value={formData.city} onChange={handleChange} required />
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                                <Input name="aadharNumber" placeholder="Aadhar Number (Verification)" value={formData.aadharNumber} onChange={handleChange} required />
+                                <Input name="hourlyRate" type="number" placeholder="Hourly Rate (₹)" value={formData.hourlyRate} onChange={handleChange} required />
+                                <Input name="languages" placeholder="Languages (e.g. English, Hindi)" value={formData.languages} onChange={handleChange} required />
+                                <Input name="specializations" placeholder="Specialties (e.g. History, Food)" value={formData.specializations} onChange={handleChange} required />
+                            </div>
+                        )}
+
+                        <div className="flex gap-4 pt-4">
+                            {step === 2 && (
+                                <Button type="button" variant="outline" onClick={() => setStep(1)} className="w-full">
+                                    Back
+                                </Button>
+                            )}
+                            <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+                                {step === 1 ? 'Next Step' : 'Complete Registration'}
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+                <CardFooter>
+                    <Button variant="link" onClick={onBack} className="w-full text-gray-500">
+                        Cancel Registration
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
+}

@@ -1,0 +1,13 @@
+{
+    "watch": [
+        "src"
+    ],
+    "ext": "ts,json",
+    "ignore": [
+        "src/**/*.spec.ts",
+        "database.sqlite",
+        "uploads/*",
+        "node_modules"
+    ],
+    "exec": "ts-node src/index.ts"
+}
