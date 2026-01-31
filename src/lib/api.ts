@@ -403,5 +403,21 @@ export const api = {
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch community posts');
         return res.json();
+    },
+
+    /**
+     * AI Trip Planner
+     */
+    planTrip: async (data: { city: string, days: number, interests: string[] }) => {
+        const res = await fetch(`${API_URL}/api/ai/plan-trip`, {
+            method: 'POST',
+            headers: api.getHeaders(),
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.error || 'Failed to generate itinerary');
+        }
+        return res.json();
     }
 };

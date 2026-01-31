@@ -66,18 +66,11 @@ export function AITripPlanner({ user, onNavigate, onLogout, onViewProfile }: AIT
         setResult(null);
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || '';
-            const res = await fetch(`${API_URL}/api/ai/plan-trip`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    city,
-                    days: parseInt(days),
-                    interests
-                })
+            const data = await api.planTrip({
+                city,
+                days: parseInt(days),
+                interests
             });
-
-            const data = await res.json();
             if (data.itinerary) {
                 // Formatting delay is handled by Animation now
                 setResult(data);

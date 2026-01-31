@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Lock, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 
 interface MockCheckoutFormProps {
     bookingId: string;
@@ -55,11 +56,7 @@ export function MockCheckoutForm({ bookingId, onSuccess, onCancel, amount }: Moc
                     });
                 } else {
                     // Try backend first
-                    await fetch(`/api/bookings/${bookingId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'confirmed' })
-                    });
+                    await api.updateBookingStatus(bookingId, 'confirmed');
                 }
             } catch (err) {
                 console.warn("Mock payment backend update failed", err);
