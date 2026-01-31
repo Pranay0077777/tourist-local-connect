@@ -11,6 +11,8 @@ export interface SearchFilters {
     sortBy?: 'price_asc' | 'price_desc' | 'rating_desc' | 'reviews_desc';
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 export const api = {
     /**
      * Get security headers with JWT token
@@ -51,7 +53,7 @@ export const api = {
             }
         }
 
-        const res = await fetch(`/api/guides?${params.toString()}`);
+        const res = await fetch(`${API_URL}/api/guides?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch guides');
         return res.json();
     },
@@ -60,7 +62,7 @@ export const api = {
      * Fetch a single guide by ID
      */
     getGuideById: async (id: string): Promise<Guide | null> => {
-        const res = await fetch(`/api/guides/${id}`);
+        const res = await fetch(`${API_URL}/api/guides/${id}`);
         if (res.status === 404) return null;
         if (!res.ok) throw new Error('Failed to fetch guide');
         return res.json();
@@ -70,7 +72,7 @@ export const api = {
      * Fetch a generic user by ID (for chat/profiles)
      */
     getUserById: async (id: string): Promise<LocalUser | null> => {
-        const res = await fetch(`/api/users/${id}`);
+        const res = await fetch(`${API_URL}/api/users/${id}`);
         if (res.status === 404) return null;
         if (!res.ok) throw new Error('Failed to fetch user');
         return res.json();
@@ -81,7 +83,7 @@ export const api = {
      * For now, returning empty or mock
      */
     getReviewsForGuide: async (guideId: string): Promise<Review[]> => {
-        const res = await fetch(`/api/reviews?guideId=${guideId}`);
+        const res = await fetch(`${API_URL}/api/reviews?guideId=${guideId}`);
         if (!res.ok) {
             // If table doesn't exist yet or other error, return empty to avoid crash while dev
             console.error("Failed to fetch reviews");
@@ -151,7 +153,9 @@ export const api = {
      * Fetch pending booking requests for a guide
      */
     getBookingRequests: async (guideId: string) => {
-        const res = await fetch(`/api/bookings?userId=${guideId}&role=guide`);
+        const res = await fetch(`${API_URL}/api/bookings?userId=${guideId}&role=guide`, {
+            headers: api.getHeaders()
+        });
         if (!res.ok) throw new Error('Failed to fetch bookings');
         // Format backend status to frontend expectations if needed
         const bookings = await res.json();
@@ -171,7 +175,9 @@ export const api = {
      * Get bookings for a user (Tourist view)
      */
     getBookings: async (userId: string) => {
-        const res = await fetch(`/api/bookings?userId=${userId}&role=tourist`);
+        const res = await fetch(`${API_URL}/api/bookings?userId=${userId}&role=tourist`, {
+            headers: api.getHeaders()
+        });
         if (!res.ok) throw new Error('Failed to fetch bookings');
         const data = await res.json();
         return data.map((b: any) => ({
@@ -186,7 +192,7 @@ export const api = {
      * Update booking status
      */
     updateBookingStatus: async (bookingId: string, status: 'confirmed' | 'cancelled') => {
-        const res = await fetch(`/api/bookings/${bookingId}`, {
+        const res = await fetch(`${API_URL}/api/bookings/${bookingId}`, {
             method: 'PATCH',
             headers: api.getHeaders(),
             body: JSON.stringify({ status })
@@ -198,7 +204,7 @@ export const api = {
      * Create a booking
      */
     createBooking: async (bookingData: any) => {
-        const res = await fetch('/api/bookings', {
+        const res = await fetch(`${API_URL}/api/bookings`, {
             method: 'POST',
             headers: api.getHeaders(),
             body: JSON.stringify(bookingData)
@@ -210,7 +216,7 @@ export const api = {
      * Submit a review (Pending Backend)
      */
     addReview: async (review: Partial<Review>): Promise<Review> => {
-        const res = await fetch('/api/reviews', {
+        const res = await fetch(`${API_URL}/api/reviews`, {
             method: 'POST',
             headers: api.getHeaders(),
             body: JSON.stringify(review)
@@ -223,7 +229,9 @@ export const api = {
      * Get availability (Simulated for now)
      */
     getAvailability: async (guideId: string): Promise<Record<string, 'available' | 'busy' | 'off'>> => {
-        const res = await fetch(`/api/availability/${guideId}`);
+        const res = await fetch(`${API_URL}/api/availability/${guideId}`, {
+            headers: api.getHeaders()
+        });
         if (!res.ok) {
             console.error("Failed to fetch availability");
             return {};
@@ -235,7 +243,7 @@ export const api = {
      * Update availability (Simulated)
      */
     updateAvailability: async (guideId: string, date: string, status: 'available' | 'busy' | 'off') => {
-        const res = await fetch(`/api/availability/${guideId}`, {
+        const res = await fetch(`${API_URL}/api/availability/${guideId}`, {
             method: 'POST',
             headers: api.getHeaders(),
             body: JSON.stringify({ date, status })
@@ -248,7 +256,7 @@ export const api = {
      * Update User Profile
      */
     updateUser: async (id: string, updates: any) => {
-        const res = await fetch(`/api/users/${id}`, {
+        const res = await fetch(`${API_URL}/api/users/${id}`, {
             method: 'PATCH',
             headers: api.getHeaders(),
             body: JSON.stringify(updates)
@@ -261,7 +269,9 @@ export const api = {
      * Get Messages
      */
     getMessages: async (userId: string, contactId: string) => {
-        const res = await fetch(`/api/messages?userId=${userId}&contactId=${contactId}`);
+        const res = await fetch(`${API_URL}/api/messages?userId=${userId}&contactId=${contactId}`, {
+            headers: api.getHeaders()
+        });
         if (!res.ok) throw new Error('Failed to fetch messages');
         return res.json();
     },
@@ -270,7 +280,9 @@ export const api = {
      * Get unique list of conversations for a user
      */
     getConversations: async (userId: string): Promise<any[]> => {
-        const res = await fetch(`/api/messages/conversations/${userId}`);
+        const res = await fetch(`${API_URL}/api/messages/conversations/${userId}`, {
+            headers: api.getHeaders()
+        });
         if (!res.ok) throw new Error('Failed to fetch conversations');
         return res.json();
     },
@@ -279,9 +291,9 @@ export const api = {
      * Mark messages from a contact as read
      */
     markMessagesAsRead: async (userId: string, contactId: string): Promise<void> => {
-        await fetch('/api/messages/read', {
+        await fetch(`${API_URL}/api/messages/read`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: api.getHeaders(), // Added auth header just in case
             body: JSON.stringify({ userId, contactId })
         });
     },
@@ -290,7 +302,7 @@ export const api = {
      * Auth Methods
      */
     login: async (credentials: any) => {
-        const res = await fetch('/api/auth/login', {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credentials)
@@ -303,7 +315,7 @@ export const api = {
     },
 
     register: async (userData: any) => {
-        const res = await fetch('/api/auth/register', {
+        const res = await fetch(`${API_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData)
@@ -319,15 +331,17 @@ export const api = {
      * Favorites
      */
     getFavorites: async (userId: string): Promise<string[]> => {
-        const res = await fetch(`/api/favorites/${userId}`);
+        const res = await fetch(`${API_URL}/api/favorites/${userId}`, {
+            headers: api.getHeaders()
+        });
         if (!res.ok) throw new Error('Failed to fetch favorites');
         return res.json();
     },
 
     addFavorite: async (userId: string, guideId: string) => {
-        const res = await fetch('/api/favorites', {
+        const res = await fetch(`${API_URL}/api/favorites`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: api.getHeaders(),
             body: JSON.stringify({ userId, guideId })
         });
         if (!res.ok) throw new Error('Failed to add favorite');
@@ -335,8 +349,9 @@ export const api = {
     },
 
     removeFavorite: async (userId: string, guideId: string) => {
-        const res = await fetch(`/api/favorites/${userId}/${guideId}`, {
-            method: 'DELETE'
+        const res = await fetch(`${API_URL}/api/favorites/${userId}/${guideId}`, {
+            method: 'DELETE',
+            headers: api.getHeaders()
         });
         if (!res.ok) throw new Error('Failed to remove favorite');
         return res.json();
@@ -346,9 +361,9 @@ export const api = {
      * Saved Itineraries
      */
     saveItinerary: async (itinerary: { userId: string, city: string, title: string, content: any }) => {
-        const res = await fetch('/api/itineraries', {
+        const res = await fetch(`${API_URL}/api/itineraries`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: api.getHeaders(),
             body: JSON.stringify(itinerary)
         });
         if (!res.ok) throw new Error('Failed to save itinerary');
@@ -356,35 +371,35 @@ export const api = {
     },
 
     getSavedItineraries: async (userId: string) => {
-        const res = await fetch(`/api/itineraries/user/${userId}`);
+        const res = await fetch(`${API_URL}/api/itineraries/user/${userId}`, { headers: api.getHeaders() });
         if (!res.ok) throw new Error('Failed to fetch itineraries');
         return res.json();
     },
 
     deleteItinerary: async (id: string) => {
-        const res = await fetch(`/api/itineraries/${id}`, {
-            method: 'DELETE'
+        const res = await fetch(`${API_URL}/api/itineraries/${id}`, {
+            method: 'DELETE', headers: api.getHeaders()
         });
         if (!res.ok) throw new Error('Failed to delete itinerary');
         return res.json();
     },
 
     getWeather: async (city: string) => {
-        const res = await fetch(`/api/weather/${city}`);
+        const res = await fetch(`${API_URL}/api/weather/${city}`);
         if (!res.ok) throw new Error('Failed to fetch weather');
         return res.json();
     },
 
     adjustItinerary: async (id: string) => {
-        const res = await fetch(`/api/itineraries/${id}/adjust`, {
-            method: 'PATCH'
+        const res = await fetch(`${API_URL}/api/itineraries/${id}/adjust`, {
+            method: 'PATCH', headers: api.getHeaders()
         });
         if (!res.ok) throw new Error('Failed to adjust itinerary');
         return res.json();
     },
 
     getCommunityPosts: async (city?: string) => {
-        const url = city ? `/api/community/posts?city=${city}` : '/api/community/posts';
+        const url = city ? `${API_URL}/api/community/posts?city=${city}` : `${API_URL}/api/community/posts`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch community posts');
         return res.json();
