@@ -115,7 +115,7 @@ function AppContent() {
         } />
 
         {/* Shared Protected Routes */}
-        <Route path="/browse" element={<ProtectedRoute role="tourist"><BrowseGuides user={currentUser!} onNavigate={handleNavigate} onLogout={handleLogout} onViewProfile={(id) => navigate(`/profile/${id}`)} /></ProtectedRoute>} />
+        <Route path="/browse" element={<ProtectedRoute role="tourist"><BrowseGuides user={currentUser!} onNavigate={handleNavigate} onLogout={handleLogout} onViewProfile={(id) => navigate(`/profile/${id}`)} initialCity={location.state?.city} initialBrowseMode={location.state?.browseMode} /></ProtectedRoute>} />
         <Route path="/profile/:id" element={<ProtectedRoute><GuideProfile guideId={location.pathname.split('/').pop()!} onBack={() => navigate('/browse')} onNavigate={handleNavigate} currentUser={currentUser!} /></ProtectedRoute>} />
         <Route path="/bookings" element={<ProtectedRoute><MyBookings user={currentUser!} onNavigate={handleNavigate} onLogout={handleLogout} /></ProtectedRoute>} />
         <Route path="/messages" element={<ProtectedRoute><Messages currentUser={currentUser!} onNavigate={handleNavigate} onLogout={handleLogout} onViewProfile={(id) => navigate(`/profile/${id}`)} initialContactId={location.state?.guideId} /></ProtectedRoute>} />

@@ -16,8 +16,8 @@ router.get('/', async (req, res) => {
         }
 
         if (searchQuery) {
-            conditions.push('(name LIKE ? OR specialties LIKE ? OR bio LIKE ?)');
-            params.push(`%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`);
+            conditions.push('(name LIKE ? OR specialties LIKE ? OR bio LIKE ? OR location LIKE ?)');
+            params.push(`%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`);
         }
 
         if (minPrice) {

@@ -231,188 +231,58 @@ app.post('/api/seed', async (req, res) => {
 
         const getAvatar = (gender: 'men' | 'women', id: number) => `https://randomuser.me/api/portraits/${gender}/${id}.jpg`;
 
-        const chennaiGuides = [
-            {
-                id: "ch_1",
-                name: "Rajesh Kumar",
-                avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop",
-                location: "Chennai, Tamil Nadu",
-                languages: JSON.stringify(["English", "Tamil", "Hindi"]),
-                rating: 4.9,
-                review_count: 124,
-                hourly_rate: 500,
-                specialties: JSON.stringify(["Heritage Walks", "Food Tours", "Temple Architecture"]),
-                bio: "History buff and foodie. I love sharing the stories that make Chennai unique. Join me for an unforgettable cultural journey.",
-                verified: 1,
-                response_time: "1 hour",
-                experience: "4 years",
-                completed_tours: 142,
-                joined_date: "2023-01-15",
-                availability: JSON.stringify(["Mon", "Tue", "Wed", "Fri", "Sat"]),
-                itinerary: JSON.stringify([{ "time": "09:00 AM", "activity": "Meet at Kapaleeshwarar Temple", "icon": "map-pin" }]),
-                hidden_gems: JSON.stringify([])
-            },
-            ...Array.from({ length: 9 }).map((_, i) => ({
-                id: `ch_${i + 2}`,
-                name: ["Arun Vijay", "Deepa S", "Senthil N", "Meera K", "Karthik R", "Lakshmi P", "Vikram S", "Anitha M", "Siva G"][i],
-                avatar: unsplashAvatars[i % unsplashAvatars.length],
-                location: "Chennai, Tamil Nadu",
-                languages: JSON.stringify(["English", "Tamil"]),
-                rating: Number((4.5 + (Math.random() * 0.4)).toFixed(1)),
-                review_count: 20 + Math.floor(Math.random() * 100),
-                hourly_rate: 400 + Math.floor(Math.random() * 400),
-                specialties: JSON.stringify(["City Highlights", "Shopping", "Food"]),
-                bio: "Passionate local guide helping you discover the soul of Chennai. From beaches to temples, I know it all.",
-                verified: Math.random() > 0.3 ? 1 : 0,
-                response_time: "2 hours",
-                experience: "2 years",
-                completed_tours: 10 + Math.floor(Math.random() * 50),
-                joined_date: "2023-05-12",
-                availability: JSON.stringify(["Mon", "Sat", "Sun"]),
-                itinerary: JSON.stringify([]),
-                hidden_gems: JSON.stringify([])
-            }))
+        const states = [
+            { name: "Tamil Nadu", cities: ["Chennai", "Madurai"], big: true },
+            { name: "Karnataka", cities: ["Bengaluru", "Mysuru"], big: true },
+            { name: "Telangana", cities: ["Hyderabad", "Warangal"], big: true },
+            { name: "Kerala", cities: ["Kochi", "Thiruvananthapuram"], big: false },
+            { name: "Andhra Pradesh", cities: ["Visakhapatnam"], big: false }
         ];
 
-        const kochiGuides = [
-            {
-                id: "kc_1",
-                name: "Priya Menon",
-                avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1888&auto=format&fit=crop",
-                location: "Kochi, Kerala",
-                languages: JSON.stringify(["English", "Malayalam", "French"]),
-                rating: 4.8,
-                review_count: 98,
-                hourly_rate: 550,
-                specialties: JSON.stringify(["Art & Culture", "Backwaters", "Colonial History"]),
-                bio: "Namaste! I grew up in Fort Kochi surrounded by art and history. Let me show you the hidden gems of my hometown.",
-                verified: 1,
-                response_time: "30 minutes",
-                experience: "3 years",
-                completed_tours: 95,
-                joined_date: "2023-04-10",
-                availability: JSON.stringify(["Wed", "Thu", "Fri", "Sat", "Sun"]),
-                itinerary: JSON.stringify([]),
-                hidden_gems: JSON.stringify([])
-            },
-            ...Array.from({ length: 9 }).map((_, i) => ({
-                id: `kc_${i + 2}`,
-                name: ["Raju Thomas", "Sneha George", "Abdullah K", "Rose Mary", "Mathew J", "Fathima S", "Joseph P", "Vidya N", "Rahul K"][i],
-                avatar: getAvatar(i % 2 === 0 ? 'men' : 'women', 30 + i),
-                location: "Kochi, Kerala",
-                languages: JSON.stringify(["English", "Malayalam", "Arabic"]),
-                rating: Number((4.6 + (Math.random() * 0.3)).toFixed(1)),
-                review_count: 15 + Math.floor(Math.random() * 80),
-                hourly_rate: 600 + Math.floor(Math.random() * 300),
-                specialties: JSON.stringify(["Spice Markets", "Houseboats", "History"]),
-                bio: "Welcome to God's Own Country! I specialize in showing you the authentic side of Kochi.",
-                verified: 1,
-                response_time: "1 hour",
-                experience: "3 years",
-                completed_tours: 30 + Math.floor(Math.random() * 60),
-                joined_date: "2023-06-01",
-                availability: JSON.stringify(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]),
-                itinerary: JSON.stringify([]),
-                hidden_gems: JSON.stringify([])
-            }))
-        ];
+        const allMockGuides: any[] = [];
+        let guideIdCounter = 1;
 
-        const tvmGuides = [
-            {
-                id: "tv_1",
-                name: "Anjali Menon",
-                avatar: "https://images.unsplash.com/photo-1693649977898-19984f0d231f?w=400&h=400&fit=crop",
-                location: "Thiruvananthapuram, Kerala",
-                languages: JSON.stringify(["English", "Malayalam", "Hindi"]),
-                rating: 4.8,
-                review_count: 68,
-                hourly_rate: 300,
-                specialties: JSON.stringify(["Beach Tours", "Ayurveda", "Temples"]),
-                bio: "Wellness Tourism Specialist. Kerala native with expertise in Ayurvedic wellness and temple heritage.",
-                verified: 1,
-                response_time: "2 hours",
-                experience: "5 years",
-                completed_tours: 95,
-                joined_date: "2023-04-10",
-                availability: JSON.stringify(["Wed", "Thu", "Fri", "Sat", "Sun"]),
-                itinerary: JSON.stringify([]),
-                hidden_gems: JSON.stringify([])
-            },
-            ...Array.from({ length: 9 }).map((_, i) => ({
-                id: `tv_${i + 2}`,
-                name: ["Manoj Nair", "Divya Pillai", "Vishnu S", "Greeshma R", "Kiran V", "Parvathy A", "Harish K", "Soumya L", "Unni M"][i],
-                avatar: unsplashAvatars[(i + 4) % unsplashAvatars.length],
-                location: "Thiruvananthapuram, Kerala",
-                languages: JSON.stringify(["English", "Malayalam"]),
-                rating: Number((4.5 + (Math.random() * 0.4)).toFixed(1)),
-                review_count: 10 + Math.floor(Math.random() * 50),
-                hourly_rate: 300 + Math.floor(Math.random() * 200),
-                specialties: JSON.stringify(["Padmanabhaswamy Temple", "Museums", "Food"]),
-                bio: "Explore the capital city with a local expert! I know the best spots for sadhya and sunset views.",
-                verified: Math.random() > 0.5 ? 1 : 0,
-                response_time: "4 hours",
-                experience: "2 years",
-                completed_tours: 20 + Math.floor(Math.random() * 40),
-                joined_date: "2023-08-15",
-                availability: JSON.stringify(["Sat", "Sun"]),
-                itinerary: JSON.stringify([]),
-                hidden_gems: JSON.stringify([])
-            }))
-        ];
+        states.forEach(state => {
+            state.cities.forEach((cityName, cityIdx) => {
+                let count = state.big ? (cityIdx === 0 ? 8 : 4) : 5;
+                if (cityName === "Madurai" || cityName === "Mysuru") count = 5; // Adjustment for user request
 
-        const vizagGuides = [
-            {
-                id: "vz_1",
-                name: "Vikram Reddy",
-                avatar: "https://media.istockphoto.com/id/1322664345/photo/young-indian-businessman-with-his-freight-forward-lorry-or-truck.jpg?s=1024x1024&w=is&k=20&c=U9lFLmQ24qDw3L3fvJw7V-h0OskdPgMheoCIkMq78Qw=",
-                location: "Visakhapatnam, Andhra Pradesh",
-                languages: JSON.stringify(["English", "Telugu", "Hindi"]),
-                rating: 4.9,
-                review_count: 76,
-                hourly_rate: 320,
-                specialties: JSON.stringify(["Beach Tours", "Naval History", "Coastal Cuisine"]),
-                bio: "Coastal Tourism Expert. Showing you the Jewel of the East Coast.",
-                verified: 1,
-                response_time: "1 hour",
-                experience: "4 years",
-                completed_tours: 118,
-                joined_date: "2023-02-05",
-                availability: JSON.stringify(["Mon", "Tue", "Thu", "Fri", "Sat"]),
-                itinerary: JSON.stringify([]),
-                hidden_gems: JSON.stringify([])
-            },
-            ...Array.from({ length: 9 }).map((_, i) => ({
-                id: `vz_${i + 2}`,
-                name: ["Srinivas Rao", "Padma L", "Naveen K", "Swathi M", "Ravi Teja", "Bhavana S", "Krishna C", "Hima Bindu", "Prasad V"][i],
-                avatar: getAvatar(i % 2 === 0 ? 'men' : 'women', 50 + i),
-                location: "Visakhapatnam, Andhra Pradesh",
-                languages: JSON.stringify(["English", "Telugu"]),
-                rating: Number((4.4 + (Math.random() * 0.5)).toFixed(1)),
-                review_count: 20 + Math.floor(Math.random() * 90),
-                hourly_rate: 300 + Math.floor(Math.random() * 250),
-                specialties: JSON.stringify(["Araku Valley", "Submarine Museum", "Coffee"]),
-                bio: "I love Vizag! Let me take you on a drive along the coast or a trek in the hills.",
-                verified: 1,
-                response_time: "3 hours",
-                experience: "3 years",
-                completed_tours: 40 + Math.floor(Math.random() * 70),
-                joined_date: "2023-03-20",
-                availability: JSON.stringify(["Mon", "Sat", "Sun"]),
-                itinerary: JSON.stringify([]),
-                hidden_gems: JSON.stringify([])
-            }))
-        ];
+                for (let i = 0; i < count; i++) {
+                    const id = `g_${guideIdCounter++}`;
+                    const gender = Math.random() > 0.5 ? 'men' : 'women';
+                    const avatarId = Math.floor(Math.random() * 90);
 
-        // Hyd is already partially in Chennai list in original mock but adding explicitly if needed, 
-        // but for now combining the 4 lists:
-        const mockGuides = [...chennaiGuides, ...kochiGuides, ...tvmGuides, ...vizagGuides];
+                    allMockGuides.push({
+                        id,
+                        name: `${["Arun", "Senthil", "Meera", "Deepa", "Karthik", "Lakshmi", "Anitha", "Siva", "Rahul", "Priya", "Vikram", "Sneha"][Math.floor(Math.random() * 12)]} ${["Kumar", "S", "Reddy", "Menon", "Nair", "Rao", "Vijay", "Vijay", "Iyer", "Naidu"][Math.floor(Math.random() * 10)]}`,
+                        avatar: `https://randomuser.me/api/portraits/${gender}/${avatarId}.jpg`,
+                        location: `${cityName}, ${state.name}`,
+                        languages: JSON.stringify(["English", ["Tamil", "Kannada", "Telugu", "Malayalam", "Hindi"][Math.floor(Math.random() * 5)]]),
+                        rating: Number((4.5 + (Math.random() * 0.5)).toFixed(1)),
+                        review_count: 10 + Math.floor(Math.random() * 150),
+                        hourly_rate: 300 + Math.floor(Math.random() * 500),
+                        specialties: JSON.stringify([["Heritage Walks", "Food Tours", "Temple Architecture", "Beach Tours", "Shopping", "Tech Hub Tours", "Nature Walks"][Math.floor(Math.random() * 7)]]),
+                        bio: `Experienced guide in ${cityName}. I love sharing the unique stories of our city's culture and heritage.`,
+                        verified: 1,
+                        response_time: "1 hour",
+                        experience: `${2 + Math.floor(Math.random() * 10)} years`,
+                        completed_tours: 50 + Math.floor(Math.random() * 200),
+                        joined_date: "2023-01-15",
+                        availability: JSON.stringify(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]),
+                        itinerary: JSON.stringify([]),
+                        hidden_gems: JSON.stringify([])
+                    });
+                }
+            });
+        });
 
-        for (const g of mockGuides) {
+        for (const g of allMockGuides) {
             await db.prepare(`
                 INSERT INTO guides (id, name, avatar, location, languages, rating, review_count, hourly_rate, specialties, bio, verified, response_time, experience, completed_tours, joined_date, availability, itinerary, hidden_gems) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(g.id, g.name, g.avatar, g.location, g.languages, g.rating, g.review_count, g.hourly_rate, g.specialties, g.bio, g.verified, g.response_time, g.experience, g.completed_tours, g.joined_date, g.availability, g.itinerary, g.hidden_gems);
         }
+
 
         // Insert Test Users
         await db.prepare('INSERT INTO users (id, name, email, password, role, avatar, location, bio, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')

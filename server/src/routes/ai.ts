@@ -331,7 +331,7 @@ router.post('/plan-trip', async (req, res) => {
         res.json({
             itinerary: itineraryText,
             stops: finalStops,
-            guides: scoredGuides.slice(0, 3).map(({ score, ...g }) => g)
+            guides: scoredGuides.slice(0, 6).map(({ score, ...g }) => g)
         });
     } catch (error: any) {
         console.error("AI Planner Error:", error);
