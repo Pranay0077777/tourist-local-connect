@@ -34,6 +34,13 @@ function AppContent() {
   useEffect(() => {
     const checkUser = () => {
       const user = getCurrentUser();
+      // SECURITY CHECK: If user is logged in but missing a token (stale session), 
+      // they MUST re-login to work with the new backend.
+      if (user && !user.token) {
+        console.warn("[SECURITY] Stale session detected (No Token). Forcing logout.");
+        handleLogout();
+        return;
+      }
       setCurrentAppStateUser(user);
     };
 

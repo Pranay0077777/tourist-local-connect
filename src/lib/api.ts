@@ -11,7 +11,17 @@ export interface SearchFilters {
     sortBy?: 'price_asc' | 'price_desc' | 'rating_desc' | 'reviews_desc';
 }
 
-const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const getRawApiUrl = () => {
+    let url = import.meta.env.VITE_API_URL || '';
+    if (!url) return '';
+    if (!url.startsWith('http')) {
+        url = `https://${url}`;
+    }
+    return url.replace(/\/$/, '');
+};
+
+const API_URL = getRawApiUrl();
+console.log("[API] Using Base URL:", API_URL || "(relative proxy)");
 
 export const api = {
     /**
@@ -19,14 +29,27 @@ export const api = {
      */
     getHeaders: () => {
         const currentUserStr = localStorage.getItem('tlc_current_user');
-        const token = currentUserStr ? JSON.parse(currentUserStr).token : null;
+        console.log("[API] Raw User String from Storage:", currentUserStr ? "(Present)" : "(NOT FOUND)");
+
+        let token = null;
+        try {
+            if (currentUserStr) {
+                const userData = JSON.parse(currentUserStr);
+                token = userData.token;
+            }
+        } catch (e) {
+            console.error("[API] Failed to parse user string:", e);
+        }
 
         const headers: Record<string, string> = {
             'Content-Type': 'application/json'
         };
 
         if (token) {
+            console.log("[API] Attaching Token:", token.substring(0, 10) + "...");
             headers['Authorization'] = `Bearer ${token}`;
+        } else {
+            console.warn("[API] No token found! Auth will likely fail.");
         }
 
         return headers;
