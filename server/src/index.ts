@@ -47,19 +47,15 @@ app.use(express.json());
 // Auth Middleware
 const authenticateToken = (req: any, res: any, next: any) => {
     const authHeader = req.headers['authorization'];
-    console.log(`[AUTH] Request Path: ${req.path}`);
-    console.log(`[AUTH] Authorization Header: ${authHeader ? 'Bearer ' + authHeader.split(' ')[1].substring(0, 10) + '...' : 'MISSING'}`);
 
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        console.warn(`[AUTH] Rejected: No token provided for ${req.path}`);
         return res.status(401).json({ error: "Authentication required" });
     }
 
     jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret', (err: any, user: any) => {
         if (err) {
-            console.error(`[AUTH] Rejected: Invalid token for ${req.path}`, err.message);
             return res.status(403).json({ error: "Invalid or expired token" });
         }
         req.user = user;

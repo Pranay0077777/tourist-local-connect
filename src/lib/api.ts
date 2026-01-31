@@ -21,7 +21,6 @@ const getRawApiUrl = () => {
 };
 
 const API_URL = getRawApiUrl();
-console.log("[API] Using Base URL:", API_URL || "(relative proxy)");
 
 export const api = {
     /**
@@ -29,7 +28,6 @@ export const api = {
      */
     getHeaders: () => {
         const currentUserStr = localStorage.getItem('tlc_current_user');
-        console.log("[API] Raw User String from Storage:", currentUserStr ? "(Present)" : "(NOT FOUND)");
 
         let token = null;
         try {
@@ -38,7 +36,7 @@ export const api = {
                 token = userData.token;
             }
         } catch (e) {
-            console.error("[API] Failed to parse user string:", e);
+            // Silently fail, getHeaders will warn if token missing
         }
 
         const headers: Record<string, string> = {
@@ -46,10 +44,7 @@ export const api = {
         };
 
         if (token) {
-            console.log("[API] Attaching Token:", token.substring(0, 10) + "...");
             headers['Authorization'] = `Bearer ${token}`;
-        } else {
-            console.warn("[API] No token found! Auth will likely fail.");
         }
 
         return headers;
