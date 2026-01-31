@@ -31,7 +31,7 @@ export function SignIn({ role, onSuccess, onBack, onSwitchToSignUp }: SignInProp
             }
 
             // On success, save user and token
-            setCurrentUser(data.user);
+            setCurrentUser({ ...data.user, token: data.token });
             toast.success(`Welcome back, ${data.user.name}!`);
             onSuccess();
         } catch (error: any) {

@@ -26,6 +26,7 @@ export interface LocalUser {
     verificationStatus?: 'pending' | 'verified' | 'rejected';
     aadharId?: string;
     aadharImage?: string;
+    token?: string;
 }
 
 export interface Booking {

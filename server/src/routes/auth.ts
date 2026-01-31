@@ -104,7 +104,14 @@ router.post('/register', async (req, res) => {
             );
         }
 
-        res.json({ success: true, user: { id, name, email, role } });
+        // Generate token for immediate login
+        const token = jwt.sign(
+            { id, email, role },
+            process.env.JWT_SECRET || 'fallback_secret',
+            { expiresIn: '24h' }
+        );
+
+        res.json({ success: true, token, user: { id, name, email, role } });
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: `Registration failed: ${(e as Error).message}` });

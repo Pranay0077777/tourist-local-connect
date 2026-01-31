@@ -4,13 +4,14 @@ import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardFooter } from "./ui/card";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { setCurrentUser } from "@/lib/localStorage";
 
 interface TouristSignUpProps {
     onSuccess: () => void;
     onBack: () => void;
 }
 
-export function TouristSignUp({ onBack }: TouristSignUpProps) {
+export function TouristSignUp({ onSuccess, onBack }: TouristSignUpProps) {
     const [formData, setFormData] = useState({
         name: '', email: '', password: '', phone: '', city: ''
     });
@@ -40,7 +41,7 @@ export function TouristSignUp({ onBack }: TouristSignUpProps) {
         }
 
         try {
-            await api.register({
+            const data = await api.register({
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
@@ -49,10 +50,10 @@ export function TouristSignUp({ onBack }: TouristSignUpProps) {
                 city: formData.city
             });
 
-            // On success
-            // setCurrentUser(data.user); // Removed auto-login
-            toast.success("Registration Successful! Please log in.");
-            onBack(); // Redirect to login
+            // Auto-login with the new token
+            setCurrentUser({ ...data.user, token: data.token });
+            toast.success("Registration Successful! Welcome.");
+            onSuccess(); // Directly go to dashboard
         } catch (error: any) {
             console.error("Registration failed", error);
             toast.error(error.message || "Registration failed. Try again.");
