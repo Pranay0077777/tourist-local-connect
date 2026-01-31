@@ -81,10 +81,10 @@ export function AITripPlanner({ user, onNavigate, onLogout, onViewProfile }: AIT
                 setIsLoading(false); // Stop immediately on error
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Something went wrong");
-            setIsLoading(false); // Stop immediately on error
+            toast.error(error.message || "Failed to generate itinerary. Please try again.");
+            setIsLoading(false);
         }
     };
 
