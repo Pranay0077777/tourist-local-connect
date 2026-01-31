@@ -11,7 +11,7 @@ export interface SearchFilters {
     sortBy?: 'price_asc' | 'price_desc' | 'rating_desc' | 'reviews_desc';
 }
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 export const api = {
     /**

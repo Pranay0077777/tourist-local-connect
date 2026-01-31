@@ -247,6 +247,9 @@ export function Messages({ currentUser, onNavigate, onLogout, onViewProfile, ini
                                 </Button>
                                 {(() => {
                                     const activeChat = conversations.find(c => c.id === activeConversationId);
+                                    const chatName = activeChat?.name || "User"; // Fallback name
+                                    const chatAvatar = activeChat?.avatar || "https://github.com/shadcn.png"; // Fallback avatar
+
                                     return (
                                         <div
                                             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
@@ -254,11 +257,18 @@ export function Messages({ currentUser, onNavigate, onLogout, onViewProfile, ini
                                             title="View Profile"
                                         >
                                             <div className="relative">
-                                                <img src={activeChat?.avatar} alt="User" className="w-10 h-10 rounded-full object-cover" />
+                                                <img
+                                                    src={chatAvatar}
+                                                    alt={chatName}
+                                                    className="w-10 h-10 rounded-full object-cover bg-gray-200"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = "https://github.com/shadcn.png";
+                                                    }}
+                                                />
                                                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></span>
                                             </div>
                                             <div>
-                                                <h2 className="font-bold text-gray-900">{activeChat?.name}</h2>
+                                                <h2 className="font-bold text-gray-900">{chatName}</h2>
                                                 <span className="text-xs text-green-600 font-medium flex items-center gap-1">
                                                     {isTyping ? "Typing..." : "Online"}
                                                 </span>

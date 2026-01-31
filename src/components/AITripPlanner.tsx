@@ -66,7 +66,8 @@ export function AITripPlanner({ user, onNavigate, onLogout, onViewProfile }: AIT
         setResult(null);
 
         try {
-            const res = await fetch('/api/ai/plan-trip', {
+            const API_URL = import.meta.env.VITE_API_URL || '';
+            const res = await fetch(`${API_URL}/api/ai/plan-trip`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

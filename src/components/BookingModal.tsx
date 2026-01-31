@@ -93,8 +93,9 @@ export function BookingModal({ isOpen, onClose, guideId, guideName, ratePerPerso
             setBookingId(bookingIdValue);
 
             // 2. Create Payment Intent
+            const API_URL = import.meta.env.VITE_API_URL || '';
             try {
-                const paymentRes = await fetch("/api/payments/create-payment-intent", {
+                const paymentRes = await fetch(`${API_URL}/api/payments/create-payment-intent`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ bookingId: bookingIdValue }),

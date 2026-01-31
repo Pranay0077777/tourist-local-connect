@@ -22,7 +22,8 @@ export function PaymentModal({ bookingId, price, isOpen, onClose, onSuccess }: P
     useEffect(() => {
         if (isOpen && bookingId) {
             // Create PaymentIntent as soon as the page loads
-            fetch("/api/payments/create-payment-intent", {
+            const API_URL = import.meta.env.VITE_API_URL || '';
+            fetch(`${API_URL}/api/payments/create-payment-intent`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ bookingId }),
