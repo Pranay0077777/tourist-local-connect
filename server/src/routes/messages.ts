@@ -61,13 +61,14 @@ router.get('/conversations/:userId', async (req, res) => {
             )
             SELECT 
                 lm.contact_id,
-                u.name as contact_name,
-                u.avatar as contact_avatar,
+                COALESCE(u.name, g.name) as contact_name,
+                COALESCE(u.avatar, g.avatar) as contact_avatar,
                 lm.text as last_message,
                 lm.timestamp,
                 COALESCE(uc.count, 0) as unread_count
             FROM LastMessages lm
-            JOIN users u ON lm.contact_id = u.id
+            LEFT JOIN users u ON lm.contact_id = u.id
+            LEFT JOIN guides g ON lm.contact_id = g.id
             LEFT JOIN UnreadCounts uc ON lm.contact_id = uc.contact_id
             WHERE lm.rn = 1
             ORDER BY lm.timestamp DESC

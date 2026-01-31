@@ -333,9 +333,12 @@ router.post('/plan-trip', async (req, res) => {
             stops: finalStops,
             guides: scoredGuides.slice(0, 3).map(({ score, ...g }) => g)
         });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to generate plan' });
+    } catch (error: any) {
+        console.error("AI Planner Error:", error);
+        res.status(500).json({
+            error: error.message || 'Failed to generate plan',
+            details: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+        });
     }
 });
 
