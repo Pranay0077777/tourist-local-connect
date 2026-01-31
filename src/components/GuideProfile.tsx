@@ -54,8 +54,7 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
                     // Fetch City Photos (Community posts from this city)
                     // We extract just the city name part (e.g. "Chennai" from "Chennai, Tamil Nadu")
                     const cityName = guideData.location.split(',')[0].trim();
-                    const photosRes = await fetch(`/api/community/posts?city=${cityName}`);
-                    const photosData = await photosRes.json();
+                    const photosData = await api.getCommunityPosts(cityName);
 
                     // Filter for posts that actually have images
                     setCityPhotos(photosData.filter((p: any) => p.image));
