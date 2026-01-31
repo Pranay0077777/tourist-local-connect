@@ -205,7 +205,7 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
                                         </Button>
                                         <Button
                                             size="lg"
-                                            className="w-full bg-accent hover:bg-accent/90 text-white font-bold text-lg shadow-lg shadow-accent/20"
+                                            className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/20"
                                             onClick={() => setIsBookingOpen(true)}
                                         >
                                             Book Now
