@@ -51,71 +51,71 @@ router.post('/login', async (req, res) => {
 router.post('/register', async (req, res) => {
     const { email, password, name, role, phone, city, aadharNumber, hourlyRate, languages, specializations, dob } = req.body;
 
-    try {
-        const existing = await db.queryOne('SELECT id FROM users WHERE email = ?', [email]);
-        if (existing) {
-            res.status(400).json({ error: 'Email already exists' });
-            return;
-        }
+    // Run hashing and email check in parallel to save time
+    const [existing, hashedPassword] = await Promise.all([
+        db.queryOne('SELECT id FROM users WHERE email = ?', [email]),
+        bcrypt.hash(password, 10) // Use 10 rounds for balance between security and speed
+    ]);
 
-        const id = role === 'guide' ? `g_${Date.now()}` : `u_${Date.now()}`;
+    if (existing) {
+        res.status(400).json({ error: 'Email already exists' });
+        return;
+    }
 
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+    const id = role === 'guide' ? `g_${Date.now()}` : `u_${Date.now()}`;
 
-        // Sanitize inputs to avoid undefined errors
-        const avatar = req.body.avatar || "/uploads/default-avatar.png";
-        const bio = req.body.bio || (role === 'guide' ? "Professional guide" : "New user");
-        const location = city ? `${city}, India` : "India";
-        const safePhone = phone || null;
-        const safeCity = city || null;
-        const safeAadhar = aadharNumber || null;
-        const safeDob = dob || null;
-        const safeLanguages = languages || null;
-        const safeSpecs = specializations || null;
-        const safeRate = hourlyRate || null;
+    // Sanitize inputs to avoid undefined errors
+    const avatar = req.body.avatar || "/uploads/default-avatar.png";
+    const bio = req.body.bio || (role === 'guide' ? "Professional guide" : "New user");
+    const location = city ? `${city}, India` : "India";
+    const safePhone = phone || null;
+    const safeCity = city || null;
+    const safeAadhar = aadharNumber || null;
+    const safeDob = dob || null;
+    const safeLanguages = languages || null;
+    const safeSpecs = specializations || null;
+    const safeRate = hourlyRate || null;
 
-        // Insert into users table
-        await db.exec(`
+    // Insert into users table
+    await db.exec(`
             INSERT INTO users (id, name, email, password, role, avatar, bio, location, phone, city, aadhar_number, dob, languages, specializations, hourly_rate) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [id, name, email, hashedPassword, role, avatar, bio, location, safePhone, safeCity, safeAadhar, safeDob, safeLanguages, safeSpecs, safeRate]);
 
-        // If guide, also insert into guides table for discovery
-        if (role === 'guide') {
-            const langArray = languages ? (typeof languages === 'string' ? languages.split(',').map((l: string) => l.trim()) : languages) : [];
-            const specArray = specializations ? (typeof specializations === 'string' ? specializations.split(',').map((s: string) => s.trim()) : specializations) : [];
+    // If guide, also insert into guides table for discovery
+    if (role === 'guide') {
+        const langArray = languages ? (typeof languages === 'string' ? languages.split(',').map((l: string) => l.trim()) : languages) : [];
+        const specArray = specializations ? (typeof specializations === 'string' ? specializations.split(',').map((s: string) => s.trim()) : specializations) : [];
 
-            await db.exec(`
+        await db.exec(`
                 INSERT INTO guides (id, name, avatar, location, languages, rating, review_count, hourly_rate, specialties, bio, dob, verified, response_time, experience, completed_tours, joined_date, availability, itinerary, hidden_gems) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `, [
-                id, name, avatar, location,
-                JSON.stringify(langArray),
-                0, 0, // rating, review_count
-                Number(hourlyRate) || 0,
-                JSON.stringify(specArray),
-                bio, safeDob, 0, // verified
-                "1 day", "0 years", 0, // response_time, experience, completed_tours
-                new Date().toISOString().split('T')[0], // joined_date
-                JSON.stringify(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]), // availability
-                JSON.stringify([]), JSON.stringify([]) // itinerary, hidden_gems
-            ]);
-        }
-
-        // Generate token for immediate login
-        const token = jwt.sign(
-            { id, email, role },
-            process.env.JWT_SECRET || 'college_project_secret_key_2026',
-            { expiresIn: '24h' }
-        );
-
-        res.json({ success: true, token, user: { id, name, email, role } });
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: `Registration failed: ${(e as Error).message}` });
+            id, name, avatar, location,
+            JSON.stringify(langArray),
+            0, 0, // rating, review_count
+            Number(hourlyRate) || 0,
+            JSON.stringify(specArray),
+            bio, safeDob, 0, // verified
+            "1 day", "0 years", 0, // response_time, experience, completed_tours
+            new Date().toISOString().split('T')[0], // joined_date
+            JSON.stringify(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]), // availability
+            JSON.stringify([]), JSON.stringify([]) // itinerary, hidden_gems
+        ]);
     }
+
+    // Generate token for immediate login
+    const token = jwt.sign(
+        { id, email, role },
+        process.env.JWT_SECRET || 'college_project_secret_key_2026',
+        { expiresIn: '24h' }
+    );
+
+    res.json({ success: true, token, user: { id, name, email, role } });
+} catch (e) {
+    console.error(e);
+    res.status(500).json({ error: `Registration failed: ${(e as Error).message}` });
+}
 });
 
 export default router;

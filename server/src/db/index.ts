@@ -17,7 +17,10 @@ class DB {
         console.log("DB: Initializing PostgreSQL...");
         this.pgPool = new Pool({
             connectionString: DATABASE_URL,
-            ssl: { rejectUnauthorized: false } // Required for Neon/Supabase
+            ssl: { rejectUnauthorized: false }, // Required for Neon/Supabase
+            max: 20, // Increased for concurrent auth requests
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 2000,
         });
 
         // Test connection
