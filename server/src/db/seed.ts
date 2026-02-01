@@ -2,60 +2,76 @@ import db from './index';
 import bcrypt from 'bcryptjs';
 
 const manualGuides = [
-    { name: "Priya Raman", avatar: "https://images.unsplash.com/photo-1679335067355-40223d903144?w=200&h=200&fit=crop", gender: "females", city: "Chennai" },
-    { name: "Rajesh Murthy", avatar: "https://images.unsplash.com/photo-1681141190048-b3f4b9ab3b5a?w=200&h=200&fit=crop", gender: "males", city: "Hyderabad" },
-    { name: "Anjali Menon", avatar: "https://images.unsplash.com/photo-1693649977898-19984f0d231f?w=200&h=200&fit=crop", gender: "females", city: "Kochi" },
-    { name: "Vikram Reddy", avatar: "https://media.istockphoto.com/id/1322664345/photo/young-indian-businessman-with-his-freight-forward-lorry-or-truck.jpg?s=1024x1024&w=400&h=400&fit=crop", gender: "males", city: "Bengaluru" },
-    { name: "Arjun Kumar", avatar: "https://media.istockphoto.com/id/1394069878/photo/man-vlogging-on-the-beach.jpg?s=612x612&w=400&h=400&fit=crop", gender: "males", city: "Hyderabad" },
-    { name: "Meera Reddy", avatar: "https://images.unsplash.com/photo-1735845929510-48e0ecdb53d2?w=200&h=200&fit=crop", gender: "females", city: "Hyderabad" },
-    { name: "Karthik Menon", avatar: "https://plus.unsplash.com/premium_photo-1682092829937-bb5b289be2c3?w=400&h=400&fit=crop", gender: "males", city: "Kochi" },
-    { name: "Kavita Nair", avatar: "https://images.unsplash.com/photo-1652953233042-35a88a3e3388?w=200&h=200&fit=crop", gender: "females", city: "Thiruvananthapuram" },
-    { name: "Aditya Iyer", avatar: "https://media.istockphoto.com/id/1284080305/photo/driver-in-uniform-entering-the-bus.jpg?s=612x612&w=400&h=400&fit=crop", gender: "males", city: "Bengaluru" },
-    { name: "Lakshmi Iyer", avatar: "https://media.istockphoto.com/id/1254176393/photo/portrait-of-a-happy-woman-of-indian-ethnicity.jpg?s=612x612&w=400&h=400&fit=crop", gender: "females", city: "Hyderabad" },
-    { name: "Deepa Krishnan", avatar: "https://media.istockphoto.com/id/1313502972/photo/portrait-of-beautiful-woman-having-fun.jpg?s=612x612&w=400&h=400&fit=crop", gender: "females", city: "Madurai" },
-    { name: "Suresh Naidu", avatar: "https://media.istockphoto.com/id/1398271493/photo/college-student-with-book-and-backpack-outdoor.jpg?s=612x612&w=400&h=400&fit=crop", gender: "males", city: "Hyderabad" }
+    { name: "Priya Raman", avatar: "/uploads/avatars/tamil_nadu_chennai_female_2_priya_1769952720538.png", gender: "females", city: "Chennai" },
+    { name: "Rajesh Murthy", avatar: "/uploads/avatars/telangana_hyderabad_male_rajesh_1769953179628.png", gender: "males", city: "Hyderabad" },
+    { name: "Anjali Menon", avatar: "/uploads/avatars/kerala_kochi_female_anjali_menon_1769952684024_1769953241110.png", gender: "females", city: "Kochi" },
+    { name: "Vikram Reddy", avatar: "/uploads/avatars/vikram_reddy_bengaluru_1769952126568.png", gender: "males", city: "Bengaluru" },
+    { name: "Arjun Kumar", avatar: "/uploads/avatars/arjun_kumar_hyderabad_1769952142020.png", gender: "males", city: "Hyderabad" },
+    { name: "Meera Reddy", avatar: "/uploads/avatars/telangana_hyderabad_female_meera_reddy_1769952217602_1769953199300.png", gender: "females", city: "Hyderabad" },
+    { name: "Karthik Menon", avatar: "/uploads/avatars/kerala_kochi_male_karthik_menon_1769952701470_1769953258667.png", gender: "males", city: "Kochi" },
+    { name: "Kavita Nair", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop", gender: "females", city: "Thiruvananthapuram" },
+    { name: "Aditya Iyer", avatar: "/uploads/avatars/aditya_iyer_bengaluru_1769952159382.png", gender: "males", city: "Bengaluru" },
+    { name: "Lakshmi Iyer", avatar: "/uploads/avatars/lakshmi_iyer_hyderabad_1769952176312.png", gender: "females", city: "Hyderabad" },
+    { name: "Deepa Krishnan", avatar: "/uploads/avatars/deepa_krishnan_madurai_1769952198656.png", gender: "females", city: "Madurai" },
+    { name: "Suresh Naidu", avatar: "/uploads/avatars/suresh_naidu_hyderabad_1769952217602.png", gender: "males", city: "Hyderabad" }
 ];
 
 const stateData: Record<string, any> = {
     "Tamil Nadu": {
         cities: ["Chennai", "Madurai"],
         names: {
-            males: ["Arun", "Senthil", "Siva", "Ramesh", "Prakash", "Mani", "Selvam", "Aditya", "Rohan", "Siddharth"],
-            females: ["Deepa", "Anitha", "Sneha", "Sandhya", "Chitra", "Rekha", "Shalini", "Nandini"]
+            males: ["Arun", "Senthil", "Siva", "Ramesh", "Prakash"],
+            females: ["Deepa", "Anitha", "Sneha", "Sandhya", "Chitra"]
         },
-        lastNames: ["Kumar", "S", "Iyer", "Raman", "Vijay", "Mani", "Pillai"],
+        lastNames: ["Kumar", "S", "Iyer", "Raman", "Vijay"],
         languages: ["Tamil"],
-        traits: ["Heritage expert", "Foodie", "Temple guide"]
+        traits: ["Heritage expert", "Foodie", "Temple guide"],
+        avatars: {
+            males: ["/uploads/avatars/tamil_nadu_chennai_male_1_1769952644369.png", "/uploads/avatars/tamil_nadu_madurai_male_1_1769952663711_1769953222631.png"],
+            females: ["/uploads/avatars/tamil_nadu_madurai_female_1_1769952663711.png"]
+        }
     },
     "Karnataka": {
         cities: ["Bengaluru", "Mysuru"],
         names: {
-            males: ["Sanjay", "Vinayaka", "Naveen", "Raghu", "Pradeep", "Manjunath", "Srinivas", "Kiran"],
-            females: ["Rekha", "Shanthi", "Kavya", "Latha", "Roopa", "Jyothi", "Ambika", "Preeti"]
+            males: ["Sanjay", "Vinayaka", "Naveen", "Raghu", "Pradeep"],
+            females: ["Rekha", "Shanthi", "Kavya", "Latha", "Roopa"]
         },
-        lastNames: ["Gowda", "Shetty", "Rao", "Hegde", "Bhat", "Patil"],
+        lastNames: ["Gowda", "Shetty", "Rao", "Hegde", "Bhat"],
         languages: ["Kannada"],
-        traits: ["Tech-savvy", "Royal historian", "Nature lover"]
+        traits: ["Tech-savvy", "Royal historian", "Nature lover"],
+        avatars: {
+            males: ["/uploads/avatars/karnataka_mysuru_male_1_1769952701470.png", "/uploads/avatars/vinayaka_rao_karnataka_1769952235465.png"],
+            females: ["/uploads/avatars/karnataka_bengaluru_female_1_1769952684024.png"]
+        }
     },
     "Telangana": {
-        cities: ["Hyderabad"], // Only Hyderabad to satisfy the 5-guides-in-Hyderabad request
+        cities: ["Hyderabad"],
         names: {
             males: ["Ravi", "Krishna", "Sai", "Pavan", "Venkatesh"],
             females: ["Swapna", "Bhavani", "Himabindu", "Sravani"]
         },
         lastNames: ["Reddy", "Rao", "Naidu", "Goud"],
         languages: ["Telugu"],
-        traits: ["Biryani expert", "Fort guide", "Market explorer"]
+        traits: ["Biryani expert", "Fort guide", "Market explorer"],
+        avatars: {
+            males: ["/uploads/avatars/arjun_kumar_hyderabad_1769952142020.png", "/uploads/avatars/telangana_hyderabad_male_rajesh_1769953179628.png"],
+            females: ["/uploads/avatars/telangana_hyderabad_female_meera_reddy_1769952217602_1769953199300.png"]
+        }
     },
     "Kerala": {
         cities: ["Kochi", "Thiruvananthapuram"],
         names: {
-            males: ["Sreejith", "Rahul", "Manoj", "Ajay", "Vishnu", "Hari"],
-            females: ["Amrutha", "Greeshma", "Reshma", "Dhanya", "Maya", "Lekshmi"]
+            males: ["Sreejith", "Rahul", "Manoj", "Ajay", "Vishnu"],
+            females: ["Amrutha", "Greeshma", "Reshma", "Dhanya", "Maya"]
         },
         lastNames: ["Nair", "Menon", "Pillai", "Kurian", "Varghese"],
         languages: ["Malayalam"],
-        traits: ["Backwater expert", "Traditional arts", "Spice specialist"]
+        traits: ["Backwater expert", "Traditional arts", "Spice specialist"],
+        avatars: {
+            males: ["/uploads/avatars/kerala_kochi_male_karthik_menon_1769952701470_1769953258667.png"],
+            females: ["/uploads/avatars/kerala_kochi_female_anjali_menon_1769952684024_1769953241110.png"]
+        }
     },
     "Andhra Pradesh": {
         cities: ["Visakhapatnam"],
@@ -65,22 +81,26 @@ const stateData: Record<string, any> = {
         },
         lastNames: ["Reddy", "Naidu", "Chowdhury", "Raju"],
         languages: ["Telugu"],
-        traits: ["Beach guide", "Temple history", "Seafood expert"]
+        traits: ["Beach guide", "Temple history", "Seafood expert"],
+        avatars: {
+            males: ["https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop"],
+            females: ["https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop"]
+        }
     }
 };
 
-const femaleAvatarPool = [
-    "1573497019940-1c28c88b4f3e", "1589130482000-bc61f08248a7", "1607503814060-f24b59740076", "1635488662761-dbf26019a55a",
-    "1494790108377-be9c29b29330", "1531123897724-219310809278"
+const femaleAvatarFallback = [
+    "https://images.unsplash.com/photo-1531123897724-219310809278?w=400&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop"
 ];
 
-const maleAvatarPool = [
-    "1539571696357-5a69c17a67c6", "1507003211169-0a1dd7228f2d", "1520341202344-475b97180732", "1463453091185-61582044d556",
-    "1500648767791-00dcc994a43e", "1519085138458-252c8a69650b"
+const maleAvatarFallback = [
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"
 ];
 
 const seed = async () => {
-    console.log('🚀 Final Seeding: 5 per STATE, Using 12 Manual Guides...');
+    console.log('🚀 Final Seeding: 5 per STATE, Using AI-Generated Stable Avatars...');
     try {
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash('password123', salt);
@@ -105,29 +125,26 @@ const seed = async () => {
             let guidesAddedInState = 0;
 
             for (const [cityIdx, cityName] of data.cities.entries()) {
-                // Determine guides for this city (3/2 split if 2 cities, else 5)
                 let cityQuota = data.cities.length === 1 ? 5 : (cityIdx === 0 ? 3 : 2);
-
-                // Get manual guides for this city
                 const cityManual = manualGuides.filter(g => g.city === cityName);
                 const cityGuides: any[] = [...cityManual];
 
-                // Fill remaining quota with generic
                 while (cityGuides.length < cityQuota) {
                     const needsFemale = femaleInState < 2 && (5 - guidesAddedInState) <= (2 - femaleInState);
                     const isFemale = needsFemale || (femaleInState < 3 && Math.random() > 0.5);
                     const gender = isFemale ? "females" : "males";
 
                     const name = data.names[gender][Math.floor(Math.random() * data.names[gender].length)] + " " + data.lastNames[Math.floor(Math.random() * data.lastNames.length)];
-                    const pool = isFemale ? femaleAvatarPool : maleAvatarPool;
-                    const avatarId = pool[Math.floor(Math.random() * pool.length)];
 
-                    cityGuides.push({
-                        name,
-                        avatar: `https://images.unsplash.com/photo-${avatarId}?w=400&h=400&fit=crop`,
-                        gender
-                    });
+                    let avatar = "";
+                    if (data.avatars[gender] && data.avatars[gender].length > 0) {
+                        avatar = data.avatars[gender].shift();
+                    } else {
+                        const pool = isFemale ? femaleAvatarFallback : maleAvatarFallback;
+                        avatar = pool[Math.floor(Math.random() * pool.length)];
+                    }
 
+                    cityGuides.push({ name, avatar, gender });
                     if (isFemale) femaleInState++;
                 }
 
@@ -148,7 +165,7 @@ const seed = async () => {
                         response_time: "within 1 hour",
                         experience: `${3 + Math.floor(Math.random() * 10)} years`,
                         completed_tours: 50 + Math.floor(Math.random() * 150),
-                        joined_date: "2022-01-01",
+                        joined_date: "2020-01-01",
                         availability: JSON.stringify(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
                     });
                     guidesAddedInState++;
@@ -156,7 +173,7 @@ const seed = async () => {
             }
         }
 
-        console.log(`Inserting ${allGuides.length} guides into database...`);
+        console.log(`Inserting ${allGuides.length} guides...`);
 
         const insertUserQuery = 'INSERT INTO users (id, name, email, password, role, avatar, location, bio, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
         const insertGuideQuery = `
@@ -171,13 +188,12 @@ const seed = async () => {
             await db.prepare(insertGuideQuery).run(
                 g.id, g.name, g.avatar, g.location, g.languages, g.rating, g.review_count, g.hourly_rate, g.specialties,
                 g.bio, g.verified, g.response_time, g.experience, g.completed_tours, g.joined_date,
-                g.availability, "[]", "[]"
+                g.availability, JSON.stringify([]), JSON.stringify([])
             );
         }
 
         await db.prepare(insertUserQuery).run('tourist_1', 'Test Tourist', 'tourist@test.com', hashedPass, 'tourist', 'https://github.com/shadcn.png', 'Mumbai', 'Travel Enthusiast', 'Mumbai');
-
-        console.log(`✅ Success! Seeded Exactly ${allGuides.length} guides (5 per state).`);
+        console.log(`✅ Success! Seeded Exactly ${allGuides.length} guides with stable AI avatars.`);
     } catch (err) {
         console.error('❌ SEED ERROR:', err);
         process.exit(1);
