@@ -22,6 +22,10 @@ const getRawApiUrl = () => {
 
 const API_URL = getRawApiUrl();
 
+// In-memory cache for metadata
+let metadataCache: { cities: string[], languages: string[], specialties: string[] } | null = null;
+let metadataPromise: Promise<any> | null = null;
+
 export const api = {
     /**
      * Get security headers with JWT token
@@ -77,6 +81,35 @@ export const api = {
     },
 
     /**
+     * Fetch metadata (cities, languages, specialties) with caching
+     */
+    fetchMetadata: async () => {
+        if (metadataCache) return metadataCache;
+        if (metadataPromise) return metadataPromise;
+
+        metadataPromise = (async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/guides/meta`);
+                if (res.ok) {
+                    metadataCache = await res.json();
+                    return metadataCache;
+                }
+            } catch (e) {
+                console.error("Metadata fetch failed, falling back", e);
+            }
+            // Fallback: fetch all and extract (original logic)
+            const guides = await api.fetchGuides();
+            const cities = Array.from(new Set(guides.map((g: any) => g.location.split(',')[0].trim()))).sort();
+            const languages = Array.from(new Set(guides.flatMap((g: any) => g.languages))).sort();
+            const specialties = Array.from(new Set(guides.flatMap((g: any) => g.specialties))).sort();
+            metadataCache = { cities, languages, specialties };
+            return metadataCache;
+        })();
+
+        return metadataPromise;
+    },
+
+    /**
      * Fetch a single guide by ID
      */
     getGuideById: async (id: string): Promise<Guide | null> => {
@@ -114,27 +147,24 @@ export const api = {
      *  Get unique list of cities from API
      */
     getAvailableCities: async (): Promise<string[]> => {
-        const guides = await api.fetchGuides();
-        const cities = new Set(guides.map((g: any) => g.location.split(',')[0].trim()));
-        return Array.from(cities).sort();
+        const meta = await api.fetchMetadata();
+        return meta.cities;
     },
 
     /**
      * Get unique list of languages
      */
     getAvailableLanguages: async (): Promise<string[]> => {
-        const guides = await api.fetchGuides();
-        const languages = new Set(guides.flatMap((g: any) => g.languages));
-        return Array.from(languages).sort();
+        const meta = await api.fetchMetadata();
+        return meta.languages;
     },
 
     /**
      * Get unique list of specialties
      */
     getAvailableSpecialties: async (): Promise<string[]> => {
-        const guides = await api.fetchGuides();
-        const specialties = new Set(guides.flatMap((g: any) => g.specialties));
-        return Array.from(specialties).sort();
+        const meta = await api.fetchMetadata();
+        return meta.specialties;
     },
 
     /**

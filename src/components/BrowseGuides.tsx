@@ -116,24 +116,24 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
                     </div>
 
                     {view === 'cities' ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-200">
                             {availableCities.map(city => (
                                 <div
                                     key={city}
                                     onClick={() => handleCityClick(city)}
-                                    className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
+                                    className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                                 >
                                     <img
-                                        src={cityImages[city] || `https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=800`}
+                                        src={(cityImages[city] || `https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=400`).replace('w=800', 'w=400')}
                                         alt={city}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                                     <div className="absolute bottom-6 left-6 right-6">
                                         <h3 className="text-2xl font-bold text-white mb-1">{city}</h3>
                                         <p className="text-gray-200 text-sm font-medium flex items-center gap-2">
                                             View {totalGuides.filter(g => g.location.includes(city)).length || 'Local'} Guides
-                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                         </p>
                                     </div>
                                     <div className="absolute top-6 right-6">
@@ -146,16 +146,22 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
                         </div>
                     ) : (
                         <>
-                            {/* Quick City Filters */}
-                            {!searchQuery && availableCities.length > 0 && (
-                                <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                            {/* Quick City Filters (Always Visible) */}
+                            {availableCities.length > 0 && (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                                     <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Popular Cities</h2>
                                     <div className="flex flex-wrap gap-2">
+                                        <button
+                                            onClick={() => setSearchQuery("")}
+                                            className={`px-4 py-2 border rounded-xl text-sm font-semibold transition-all active:scale-95 ${!searchQuery ? 'bg-primary text-white border-primary shadow-sm' : 'bg-white text-gray-700 border-gray-100 hover:border-primary hover:text-primary'}`}
+                                        >
+                                            All Cities
+                                        </button>
                                         {availableCities.slice(0, 10).map(city => (
                                             <button
                                                 key={city}
                                                 onClick={() => setSearchQuery(city)}
-                                                className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary hover:shadow-md transition-all active:scale-95"
+                                                className={`px-4 py-2 border rounded-xl text-sm font-semibold transition-all active:scale-95 ${searchQuery === city ? 'bg-primary text-white border-primary shadow-sm' : 'bg-white text-gray-700 border-gray-100 hover:border-primary hover:text-primary'}`}
                                             >
                                                 {city}
                                             </button>

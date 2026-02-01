@@ -58,21 +58,22 @@ export function GuideCard({ guide, user, onViewProfile }: GuideCardProps) {
     return (
         <div
             onClick={() => onViewProfile(guide.id)}
-            className="group relative bg-card rounded-xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer border border-border/50 flex flex-col h-full"
+            className="group relative bg-card rounded-xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden cursor-pointer border border-border/50 flex flex-col h-full"
         >
-            <div className="relative aspect-[4/3] overflow-hidden">
+            <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                 <img
-                    src={guide.avatar}
+                    src={guide.avatar.includes('w=') ? guide.avatar.replace(/w=\d+/, 'w=400').replace(/h=\d+/, 'h=300') : guide.avatar}
                     alt={guide.name}
-                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-200" />
 
                 <button
-                    className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white shadow-md transition-all duration-300 z-10 active:scale-95"
+                    className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white shadow-md transition-all duration-200 z-10 active:scale-95"
                     onClick={toggleFavorite}
                 >
-                    <Heart className={`w-5 h-5 transition-colors duration-300 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                    <Heart className={`w-5 h-5 transition-colors duration-200 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
                 </button>
 
                 {guide.verified && (

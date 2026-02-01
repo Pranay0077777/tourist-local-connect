@@ -3,6 +3,37 @@ import db from '../db';
 
 const router = express.Router();
 
+router.get('/meta', async (req, res) => {
+    try {
+        // Fetch all distinct locations
+        const locations = await db.query('SELECT DISTINCT location FROM guides');
+        const cities = Array.from(new Set(locations.map((g: any) => g.location.split(',')[0].trim()))).sort();
+
+        // Fetch all languages and specialties for unique extraction
+        // In a large DB, we'd use JSONB functions, but for this size, a quick query is fine
+        const data = await db.query('SELECT languages, specialties FROM guides');
+
+        const languages = new Set<string>();
+        const specialties = new Set<string>();
+
+        data.forEach((g: any) => {
+            const langs = typeof g.languages === 'string' ? JSON.parse(g.languages || '[]') : g.languages;
+            const specs = typeof g.specialties === 'string' ? JSON.parse(g.specialties || '[]') : g.specialties;
+            if (Array.isArray(langs)) langs.forEach(l => languages.add(l));
+            if (Array.isArray(specs)) specs.forEach(s => specialties.add(s));
+        });
+
+        res.json({
+            cities,
+            languages: Array.from(languages).sort(),
+            specialties: Array.from(specialties).sort()
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch metadata' });
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
         const { city, minPrice, maxPrice, sort, languages, specialties, query: searchQuery } = req.query;
@@ -34,10 +65,12 @@ router.get('/', async (req, res) => {
             query += ' WHERE ' + conditions.join(' AND ');
         }
 
+        // Apply sorting directly in SQL
         if (sort === 'price_asc') query += ' ORDER BY hourly_rate ASC';
-        if (sort === 'price_desc') query += ' ORDER BY hourly_rate DESC';
-        if (sort === 'rating_desc') query += ' ORDER BY rating DESC';
-        if (sort === 'reviews_desc') query += ' ORDER BY review_count DESC';
+        else if (sort === 'price_desc') query += ' ORDER BY hourly_rate DESC';
+        else if (sort === 'rating_desc') query += ' ORDER BY rating DESC';
+        else if (sort === 'reviews_desc') query += ' ORDER BY review_count DESC';
+        else query += ' ORDER BY id ASC'; // Consistent ordering
 
         const guides = await db.query(query, params);
 
@@ -62,6 +95,7 @@ router.get('/', async (req, res) => {
             hiddenGems: typeof g.hidden_gems === 'string' ? JSON.parse(g.hidden_gems || '[]') : g.hidden_gems
         }));
 
+        // In-memory filtering for complex JSON arrays (to keep SQL simple/generic)
         if (languages) {
             const langList = Array.isArray(languages) ? languages : [languages];
             parsedGuides = parsedGuides.filter((g: any) =>
