@@ -193,7 +193,10 @@ export const CITY_DATA: Record<string, CityData> = {
 };
 
 const getItineraryTemplate = (city: string, days: number, interests: string[]) => {
-    const data = CITY_DATA[city] || CITY_DATA['Chennai']; // Fallback
+    // Case-insensitive lookup
+    const normalizedCity = city.trim();
+    const cityKey = Object.keys(CITY_DATA).find(k => k.toLowerCase() === normalizedCity.toLowerCase());
+    const data = cityKey ? CITY_DATA[cityKey] : CITY_DATA['Chennai']; // Fallback to Chennai
 
     // Interest mapping to categories
     const categoryMap: Record<string, string> = {
@@ -295,6 +298,10 @@ router.post('/plan-trip', async (req, res) => {
     try {
         const { city, days, interests } = req.body;
 
+        if (!city || typeof city !== 'string') {
+            return res.status(400).json({ error: "City is required and must be a string." });
+        }
+
         let itineraryText = "";
         let finalStops = [];
 
@@ -310,21 +317,30 @@ router.post('/plan-trip', async (req, res) => {
             finalStops = stops;
         }
 
-        const allGuides = await db.prepare(`SELECT * FROM guides WHERE location LIKE ?`).all(`%${city}%`) as any[];
+        const allGuides = await db.query(`SELECT * FROM guides WHERE LOWER(location) LIKE LOWER(?)`, [`%${city}%`]);
 
         const scoredGuides = allGuides.map(guide => {
             let score = 0;
-            const specs = JSON.parse(guide.specialties || '[]');
+            const specs = typeof guide.specialties === 'string' ? JSON.parse(guide.specialties || '[]') : guide.specialties;
             interests.forEach((interest: string) => {
                 if (specs.some((s: string) => s.toLowerCase().includes(interest.toLowerCase()))) {
                     score += 1;
                 }
             });
             return {
-                ...guide,
-                score,
-                languages: JSON.parse(guide.languages || '[]'),
-                specialties: specs
+                id: guide.id,
+                name: guide.name,
+                avatar: guide.avatar,
+                location: guide.location,
+                languages: typeof guide.languages === 'string' ? JSON.parse(guide.languages || '[]') : guide.languages,
+                rating: guide.rating,
+                reviewCount: guide.review_count,
+                hourlyRate: guide.hourly_rate,
+                specialties: specs,
+                bio: guide.bio,
+                verified: !!guide.verified,
+                experience: guide.experience,
+                score
             };
         }).sort((a, b) => b.score - a.score);
 

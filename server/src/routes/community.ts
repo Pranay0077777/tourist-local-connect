@@ -15,11 +15,11 @@ router.get('/posts', async (req, res) => {
             params.push(`%${city}%`);
         }
 
-        const posts = await db.prepare(query).all(...params);
+        const posts = await db.query(query, params);
 
         const parsedPosts = posts.map((p: any) => ({
             ...p,
-            comments: JSON.parse(p.comments || '[]')
+            comments: typeof p.comments === 'string' ? JSON.parse(p.comments || '[]') : p.comments
         }));
 
         res.json(parsedPosts);
@@ -36,10 +36,10 @@ router.post('/posts', async (req, res) => {
         const id = `post_${Date.now()}`;
         const createdAt = new Date().toISOString();
 
-        await db.prepare(`
+        await db.exec(`
             INSERT INTO posts (id, user_id, user_name, user_avatar, content, image, city, likes, comments, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, 0, '[]', ?)
-        `).run(id, userId, userName, userAvatar, content, image, city || '', createdAt);
+        `, [id, userId, userName, userAvatar, content, image, city || '', createdAt]);
 
         res.json({ success: true, id, message: 'Post created' });
     } catch (error) {
@@ -52,21 +52,10 @@ router.post('/posts', async (req, res) => {
 router.post('/posts/:id/like', async (req, res) => {
     try {
         const { id } = req.params;
-        await db.prepare('UPDATE posts SET likes = likes + 1 WHERE id = ?').run(id);
+        await db.exec('UPDATE posts SET likes = likes + 1 WHERE id = ?', [id]);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to like post' });
-    }
-});
-
-// POST /api/community/posts/:id/view
-router.post('/posts/:id/view', async (req, res) => {
-    try {
-        const { id } = req.params;
-        await db.prepare('UPDATE posts SET views = views + 1 WHERE id = ?').run(id);
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to increment view' });
     }
 });
 
@@ -76,10 +65,10 @@ router.post('/posts/:id/comment', async (req, res) => {
         const { id } = req.params;
         const { userName, text } = req.body;
 
-        const post = await db.prepare('SELECT comments FROM posts WHERE id = ?').get(id) as any;
+        const post = await db.queryOne('SELECT comments FROM posts WHERE id = ?', [id]);
         if (!post) return res.status(404).json({ error: 'Post not found' });
 
-        const comments = JSON.parse(post.comments || '[]');
+        const comments = typeof post.comments === 'string' ? JSON.parse(post.comments || '[]') : post.comments;
         const newComment = {
             id: Date.now().toString(),
             userName,
@@ -88,7 +77,7 @@ router.post('/posts/:id/comment', async (req, res) => {
         };
         comments.push(newComment);
 
-        await db.prepare('UPDATE posts SET comments = ? WHERE id = ?').run(JSON.stringify(comments), id);
+        await db.exec('UPDATE posts SET comments = ? WHERE id = ?', [JSON.stringify(comments), id]);
 
         res.json({ success: true, comments, newComment });
     } catch (error) {
@@ -101,13 +90,13 @@ router.post('/posts/:id/comment', async (req, res) => {
 router.delete('/posts/:id/comments/:commentId', async (req, res) => {
     try {
         const { id, commentId } = req.params;
-        const post = await db.prepare('SELECT comments FROM posts WHERE id = ?').get(id) as any;
+        const post = await db.queryOne('SELECT comments FROM posts WHERE id = ?', [id]);
         if (!post) return res.status(404).json({ error: 'Post not found' });
 
-        let comments = JSON.parse(post.comments || '[]');
+        let comments = typeof post.comments === 'string' ? JSON.parse(post.comments || '[]') : post.comments;
         comments = comments.filter((c: any) => c.id !== commentId);
 
-        await db.prepare('UPDATE posts SET comments = ? WHERE id = ?').run(JSON.stringify(comments), id);
+        await db.exec('UPDATE posts SET comments = ? WHERE id = ?', [JSON.stringify(comments), id]);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete comment' });

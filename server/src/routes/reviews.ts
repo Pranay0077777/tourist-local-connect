@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
             return;
         }
 
-        const reviews = await db.prepare('SELECT * FROM reviews WHERE guide_id = ? ORDER BY date DESC').all(guideId);
+        const reviews = await db.query('SELECT * FROM reviews WHERE guide_id = ? ORDER BY date DESC', [guideId]);
 
         const formattedReviews = reviews.map((r: any) => ({
             id: r.id,
@@ -40,25 +40,27 @@ router.post('/', async (req, res) => {
             return;
         }
 
-        const id = `rev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const id = `rev_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
         const date = new Date().toISOString();
 
-        await db.prepare(`
+        await db.exec(`
             INSERT INTO reviews (id, guide_id, user_name, user_avatar, rating, comment, date, tour_type)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(id, guideId, userName, userAvatar, rating, comment, date, tourType || 'Standard Tour');
+        `, [id, guideId, userName, userAvatar, rating, comment, date, tourType || 'Standard Tour']);
 
-        const stats = await db.prepare(`
-            SELECT AVG(rating) as avgRating, COUNT(*) as count 
+        const stats = await db.queryOne(`
+            SELECT AVG(rating) as "avgRating", COUNT(*) as count 
             FROM reviews 
             WHERE guide_id = ?
-        `).get(guideId) as { avgRating: number, count: number };
+        `, [guideId]);
 
-        await db.prepare(`
-            UPDATE guides 
-            SET rating = ?, review_count = ? 
-            WHERE id = ?
-        `).run(Number(stats.avgRating.toFixed(1)), stats.count, guideId);
+        if (stats) {
+            await db.exec(`
+                UPDATE guides 
+                SET rating = ?, review_count = ? 
+                WHERE id = ?
+            `, [Number(Number(stats.avgRating || 0).toFixed(1)), Number(stats.count), guideId]);
+        }
 
         res.status(201).json({
             id,

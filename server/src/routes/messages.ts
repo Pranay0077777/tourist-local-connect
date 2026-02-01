@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
             ORDER BY timestamp ASC
         `;
 
-        const messages = await db.prepare(query).all(userId, contactId, contactId, userId);
+        const messages = await db.query(query, [userId, contactId, contactId, userId]);
 
         const formatted = messages.map((m: any) => ({
             id: m.id,
@@ -74,7 +74,7 @@ router.get('/conversations/:userId', async (req, res) => {
             ORDER BY lm.timestamp DESC
         `;
 
-        const rows = await db.prepare(query).all(userId, userId, userId, userId, userId);
+        const rows = await db.query(query, [userId, userId, userId, userId, userId]);
 
         const formatted = rows.map((r: any) => ({
             id: r.contact_id,
@@ -102,7 +102,7 @@ router.patch('/read', async (req, res) => {
             return;
         }
 
-        await db.prepare('UPDATE messages SET is_read = 1 WHERE receiver_id = ? AND sender_id = ?').run(userId, contactId);
+        await db.exec('UPDATE messages SET is_read = 1 WHERE receiver_id = ? AND sender_id = ?', [userId, contactId]);
         res.json({ success: true });
     } catch (error) {
         console.error(error);

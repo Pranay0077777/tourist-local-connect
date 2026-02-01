@@ -24,7 +24,7 @@ initTable();
 router.get('/:guideId', async (req, res) => {
     try {
         const { guideId } = req.params;
-        const slots = await db.prepare('SELECT date, status FROM guide_availability_slots WHERE guide_id = ?').all(guideId);
+        const slots = await db.query('SELECT date, status FROM guide_availability_slots WHERE guide_id = ?', [guideId]);
 
         const availabilityMap: Record<string, string> = {};
         slots.forEach((slot: any) => {
@@ -45,11 +45,11 @@ router.post('/:guideId', async (req, res) => {
 
         const id = `${guideId}_${date}`;
 
-        await db.prepare(`
+        await db.exec(`
             INSERT INTO guide_availability_slots (id, guide_id, date, status)
             VALUES (?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET status = EXCLUDED.status
-        `).run(id, guideId, date, status);
+        `, [id, guideId, date, status]);
 
         res.json({ date, status });
     } catch (error: any) {

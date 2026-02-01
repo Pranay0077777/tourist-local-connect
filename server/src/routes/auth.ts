@@ -9,7 +9,7 @@ router.post('/login', async (req, res) => {
     const { email, password, role } = req.body;
 
     try {
-        const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+        const user = await db.queryOne('SELECT * FROM users WHERE email = ?', [email]);
 
         if (user) {
             // Verify Password
@@ -31,7 +31,7 @@ router.post('/login', async (req, res) => {
             // Generate real JWT token
             const token = jwt.sign(
                 { id: user.id, email: user.email, role: user.role },
-                process.env.JWT_SECRET || 'fallback_secret',
+                process.env.JWT_SECRET || 'college_project_secret_key_2026',
                 { expiresIn: '24h' }
             );
 
@@ -52,7 +52,7 @@ router.post('/register', async (req, res) => {
     const { email, password, name, role, phone, city, aadharNumber, hourlyRate, languages, specializations, dob } = req.body;
 
     try {
-        const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+        const existing = await db.queryOne('SELECT id FROM users WHERE email = ?', [email]);
         if (existing) {
             res.status(400).json({ error: 'Email already exists' });
             return;
@@ -77,20 +77,20 @@ router.post('/register', async (req, res) => {
         const safeRate = hourlyRate || null;
 
         // Insert into users table
-        await db.prepare(`
+        await db.exec(`
             INSERT INTO users (id, name, email, password, role, avatar, bio, location, phone, city, aadhar_number, dob, languages, specializations, hourly_rate) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(id, name, email, hashedPassword, role, avatar, bio, location, safePhone, safeCity, safeAadhar, safeDob, safeLanguages, safeSpecs, safeRate);
+        `, [id, name, email, hashedPassword, role, avatar, bio, location, safePhone, safeCity, safeAadhar, safeDob, safeLanguages, safeSpecs, safeRate]);
 
         // If guide, also insert into guides table for discovery
         if (role === 'guide') {
-            const langArray = languages ? languages.split(',').map((l: string) => l.trim()) : [];
-            const specArray = specializations ? specializations.split(',').map((s: string) => s.trim()) : [];
+            const langArray = languages ? (typeof languages === 'string' ? languages.split(',').map((l: string) => l.trim()) : languages) : [];
+            const specArray = specializations ? (typeof specializations === 'string' ? specializations.split(',').map((s: string) => s.trim()) : specializations) : [];
 
-            await db.prepare(`
+            await db.exec(`
                 INSERT INTO guides (id, name, avatar, location, languages, rating, review_count, hourly_rate, specialties, bio, dob, verified, response_time, experience, completed_tours, joined_date, availability, itinerary, hidden_gems) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(
+            `, [
                 id, name, avatar, location,
                 JSON.stringify(langArray),
                 0, 0, // rating, review_count
@@ -101,13 +101,13 @@ router.post('/register', async (req, res) => {
                 new Date().toISOString().split('T')[0], // joined_date
                 JSON.stringify(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]), // availability
                 JSON.stringify([]), JSON.stringify([]) // itinerary, hidden_gems
-            );
+            ]);
         }
 
         // Generate token for immediate login
         const token = jwt.sign(
             { id, email, role },
-            process.env.JWT_SECRET || 'fallback_secret',
+            process.env.JWT_SECRET || 'college_project_secret_key_2026',
             { expiresIn: '24h' }
         );
 

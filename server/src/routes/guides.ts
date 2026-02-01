@@ -10,13 +10,13 @@ router.get('/', async (req, res) => {
         const conditions: string[] = [];
         const params: any[] = [];
 
-        if (city && city !== 'null' && city !== 'undefined') {
-            conditions.push('location LIKE ?');
+        if (city && city !== 'null' && city !== 'undefined' && city !== '') {
+            conditions.push('LOWER(location) LIKE LOWER(?)');
             params.push(`%${city}%`);
         }
 
         if (searchQuery) {
-            conditions.push('(name LIKE ? OR specialties LIKE ? OR bio LIKE ? OR location LIKE ?)');
+            conditions.push('(LOWER(name) LIKE LOWER(?) OR LOWER(specialties) LIKE LOWER(?) OR LOWER(bio) LIKE LOWER(?) OR LOWER(location) LIKE LOWER(?))');
             params.push(`%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`);
         }
 
@@ -39,27 +39,27 @@ router.get('/', async (req, res) => {
         if (sort === 'rating_desc') query += ' ORDER BY rating DESC';
         if (sort === 'reviews_desc') query += ' ORDER BY review_count DESC';
 
-        const guides = await db.prepare(query).all(...params);
+        const guides = await db.query(query, params);
 
         let parsedGuides = guides.map((g: any) => ({
             id: g.id,
             name: g.name,
             avatar: g.avatar,
             location: g.location,
-            languages: JSON.parse(g.languages || '[]'),
+            languages: typeof g.languages === 'string' ? JSON.parse(g.languages || '[]') : g.languages,
             rating: g.rating,
             reviewCount: g.review_count,
             hourlyRate: g.hourly_rate,
-            specialties: JSON.parse(g.specialties || '[]'),
+            specialties: typeof g.specialties === 'string' ? JSON.parse(g.specialties || '[]') : g.specialties,
             bio: g.bio,
             verified: !!g.verified,
             responseTime: g.response_time,
             experience: g.experience,
             completedTours: g.completed_tours,
             joinedDate: g.joined_date,
-            availability: JSON.parse(g.availability || '[]'),
-            itinerary: JSON.parse(g.itinerary || '[]'),
-            hiddenGems: JSON.parse(g.hidden_gems || '[]')
+            availability: typeof g.availability === 'string' ? JSON.parse(g.availability || '[]') : g.availability,
+            itinerary: typeof g.itinerary === 'string' ? JSON.parse(g.itinerary || '[]') : g.itinerary,
+            hiddenGems: typeof g.hidden_gems === 'string' ? JSON.parse(g.hidden_gems || '[]') : g.hidden_gems
         }));
 
         if (languages) {
@@ -83,29 +83,30 @@ router.get('/', async (req, res) => {
     }
 });
 
+
 router.get('/:id', async (req, res) => {
     try {
-        const guide = await db.prepare('SELECT * FROM guides WHERE id = ?').get(req.params.id) as any;
+        const guide = await db.queryOne('SELECT * FROM guides WHERE id = ?', [req.params.id]);
         if (guide) {
             res.json({
                 id: guide.id,
                 name: guide.name,
                 avatar: guide.avatar,
                 location: guide.location,
-                languages: JSON.parse(guide.languages || '[]'),
+                languages: typeof guide.languages === 'string' ? JSON.parse(guide.languages || '[]') : guide.languages,
                 rating: guide.rating,
                 reviewCount: guide.review_count,
                 hourlyRate: guide.hourly_rate,
-                specialties: JSON.parse(guide.specialties || '[]'),
+                specialties: typeof guide.specialties === 'string' ? JSON.parse(guide.specialties || '[]') : guide.specialties,
                 bio: guide.bio,
                 verified: !!guide.verified,
                 responseTime: guide.response_time,
                 experience: guide.experience,
                 completedTours: guide.completed_tours,
                 joinedDate: guide.joined_date,
-                availability: JSON.parse(guide.availability || '[]'),
-                itinerary: JSON.parse(guide.itinerary || '[]'),
-                hiddenGems: JSON.parse(guide.hidden_gems || '[]')
+                availability: typeof guide.availability === 'string' ? JSON.parse(guide.availability || '[]') : guide.availability,
+                itinerary: typeof guide.itinerary === 'string' ? JSON.parse(guide.itinerary || '[]') : guide.itinerary,
+                hiddenGems: typeof guide.hidden_gems === 'string' ? JSON.parse(guide.hidden_gems || '[]') : guide.hidden_gems
             });
         } else {
             res.status(404).json({ error: 'Guide not found' });

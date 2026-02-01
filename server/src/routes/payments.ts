@@ -13,7 +13,7 @@ router.post('/create-payment-intent', async (req, res) => {
         const { bookingId } = req.body;
         if (!bookingId) return res.status(400).json({ error: 'bookingId is required' });
 
-        const booking = await db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId) as any;
+        const booking = await db.queryOne('SELECT * FROM bookings WHERE id = ?', [bookingId]);
         if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
         const amount = Math.round((booking.total_price || booking.price) * 100);
@@ -58,7 +58,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             console.log(`Payment succeeded for booking ${bookingId}`);
 
             try {
-                await db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run('confirmed', bookingId);
+                await db.exec('UPDATE bookings SET status = ? WHERE id = ?', ['confirmed', bookingId]);
             } catch (dbErr) {
                 console.error("DB Error updating booking via webhook:", dbErr);
             }

@@ -12,6 +12,7 @@ interface TouristSignUpProps {
 }
 
 export function TouristSignUp({ onSuccess, onBack }: TouristSignUpProps) {
+    const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: '', email: '', password: '', phone: '', city: ''
     });
@@ -22,21 +23,25 @@ export function TouristSignUp({ onSuccess, onBack }: TouristSignUpProps) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
 
         // Validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
             toast.error("Please enter a valid email address");
+            setIsLoading(false);
             return;
         }
 
         if (formData.password.length < 6) {
             toast.error("Password must be at least 6 characters long");
+            setIsLoading(false);
             return;
         }
 
         if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
             toast.error("Please enter a valid 10-digit phone number");
+            setIsLoading(false);
             return;
         }
 
@@ -57,6 +62,8 @@ export function TouristSignUp({ onSuccess, onBack }: TouristSignUpProps) {
         } catch (error: any) {
             console.error("Registration failed", error);
             toast.error(error.message || "Registration failed. Try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -75,8 +82,12 @@ export function TouristSignUp({ onSuccess, onBack }: TouristSignUpProps) {
                         <Input name="phone" placeholder="Phone Number (Optional)" value={formData.phone} onChange={handleChange} />
                         <Input name="city" placeholder="Home City (Optional)" value={formData.city} onChange={handleChange} />
 
-                        <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 mt-4">
-                            Create Account
+                        <Button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full bg-blue-600 hover:bg-blue-700 mt-4"
+                        >
+                            {isLoading ? 'Creating Account...' : 'Create Account'}
                         </Button>
                     </form>
                 </CardContent>

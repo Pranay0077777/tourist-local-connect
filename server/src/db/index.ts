@@ -1,77 +1,82 @@
-import Database from 'better-sqlite3';
 import { Pool } from 'pg';
-import path from 'path';
-import fs from 'fs';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const isPostgres = !!process.env.DATABASE_URL;
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+    console.error("FATAL: DATABASE_URL is not defined in .env");
+    process.exit(1);
+}
 
 class DB {
-    private sqlite: any;
-    private pgPool: Pool | null = null;
+    private pgPool: Pool;
 
     constructor() {
-        if (isPostgres) {
-            console.log("DB: Using PostgreSQL (Production Mode)");
-            this.pgPool = new Pool({
-                connectionString: process.env.DATABASE_URL,
-                ssl: { rejectUnauthorized: false } // Required for Neon/Supabase
-            });
-        } else {
-            console.log("DB: Using SQLite (Local Dev Mode)");
-            const dbPath = path.resolve(__dirname, '../../database.sqlite');
-            this.sqlite = new Database(dbPath);
-            this.sqlite.pragma('foreign_keys = ON');
+        console.log("DB: Initializing PostgreSQL...");
+        this.pgPool = new Pool({
+            connectionString: DATABASE_URL,
+            ssl: { rejectUnauthorized: false } // Required for Neon/Supabase
+        });
 
-            // Initialize Schema if SQLite
-            const schemaPath = path.resolve(__dirname, 'schema.sql');
-            if (fs.existsSync(schemaPath)) {
-                const schema = fs.readFileSync(schemaPath, 'utf-8');
-                this.sqlite.exec(schema);
+        // Test connection
+        this.pgPool.connect((err, client, release) => {
+            if (err) {
+                console.error('DB: Connection Error:', err.stack);
+            } else {
+                console.log('DB: PostgreSQL Connected Successfully');
+                release();
             }
-        }
+        });
     }
 
-    // Helper to convert named params (:id) or (?) to Postgres ($1, $2)
+    /**
+     * Helper to convert named params (?) to Postgres ($1, $2, ...)
+     */
     private formatQuery(sql: string) {
-        if (!isPostgres) return sql;
-
         let index = 1;
-        // Simple regex to replace ? with $n - might need refinement for complex cases
-        return sql.replace(/\?/g, () => `$${index++}`);
+        let inQuote = false;
+        return sql.split('').map(char => {
+            if (char === "'") inQuote = !inQuote;
+            if (char === '?' && !inQuote) return `$${index++}`;
+            return char;
+        }).join('');
     }
 
     async query(sql: string, params: any[] = []): Promise<any[]> {
-        if (isPostgres) {
-            const res = await this.pgPool!.query(this.formatQuery(sql), params);
+        try {
+            const res = await this.pgPool.query(this.formatQuery(sql), params);
             return res.rows;
-        } else {
-            return this.sqlite.prepare(sql).all(...params);
+        } catch (error) {
+            console.error("DB Query Error:", sql, error);
+            throw error;
         }
     }
 
     async queryOne(sql: string, params: any[] = []): Promise<any> {
-        if (isPostgres) {
-            const res = await this.pgPool!.query(this.formatQuery(sql), params);
+        try {
+            const res = await this.pgPool.query(this.formatQuery(sql), params);
             return res.rows[0] || null;
-        } else {
-            return this.sqlite.prepare(sql).get(...params) || null;
+        } catch (error) {
+            console.error("DB QueryOne Error:", sql, error);
+            throw error;
         }
     }
 
     async exec(sql: string, params: any[] = []): Promise<any> {
-        if (isPostgres) {
-            const res = await this.pgPool!.query(this.formatQuery(sql), params);
+        try {
+            const res = await this.pgPool.query(this.formatQuery(sql), params);
             return { changes: res.rowCount };
-        } else {
-            return this.sqlite.prepare(sql).run(...params);
+        } catch (error) {
+            console.error("DB Exec Error:", sql, error);
+            throw error;
         }
     }
 
-    // Backward compatibility layer for "prepare" if we want to minimize refactoring
-    // But it's better to refactor to query/queryOne/exec for async support.
+    /**
+     * Backward compatibility layer for "prepare" syntax.
+     */
     prepare(sql: string) {
         const self = this;
         return {

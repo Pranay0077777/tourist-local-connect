@@ -7,8 +7,8 @@ const router = express.Router();
 router.get('/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        const favorites = await db.prepare('SELECT guide_id FROM favorites WHERE user_id = ?').all(userId) as { guide_id: string }[];
-        const guideIds = favorites.map(f => f.guide_id);
+        const favorites = await db.query('SELECT guide_id FROM favorites WHERE user_id = ?', [userId]);
+        const guideIds = favorites.map((f: any) => f.guide_id);
         res.json(guideIds);
     } catch (error: any) {
         console.error('Error fetching favorites:', error);
@@ -25,14 +25,14 @@ router.post('/', async (req, res) => {
             return;
         }
 
-        const existing = await db.prepare('SELECT id FROM favorites WHERE user_id = ? AND guide_id = ?').get(userId, guideId);
+        const existing = await db.queryOne('SELECT id FROM favorites WHERE user_id = ? AND guide_id = ?', [userId, guideId]);
         if (existing) {
             res.json({ success: true, message: 'Already favorited' });
             return;
         }
 
-        const id = `fav_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        await db.prepare('INSERT INTO favorites (id, user_id, guide_id) VALUES (?, ?, ?)').run(id, userId, guideId);
+        const id = `fav_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+        await db.exec('INSERT INTO favorites (id, user_id, guide_id) VALUES (?, ?, ?)', [id, userId, guideId]);
 
         res.json({ success: true, id });
     } catch (error: any) {
@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
 router.delete('/:userId/:guideId', async (req, res) => {
     try {
         const { userId, guideId } = req.params;
-        await db.prepare('DELETE FROM favorites WHERE user_id = ? AND guide_id = ?').run(userId, guideId);
+        await db.exec('DELETE FROM favorites WHERE user_id = ? AND guide_id = ?', [userId, guideId]);
         res.json({ success: true });
     } catch (error: any) {
         console.error('Error removing favorite:', error);

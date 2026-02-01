@@ -11,10 +11,10 @@ router.post('/', async (req, res) => {
         const id = uuidv4();
         const createdAt = new Date().toISOString();
 
-        await db.prepare(`
+        await db.exec(`
             INSERT INTO saved_itineraries (id, user_id, city, title, content, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
-        `).run(id, userId, city, title, JSON.stringify(content), createdAt);
+        `, [id, userId, city, title, JSON.stringify(content), createdAt]);
 
         res.json({ success: true, id });
     } catch (error) {
@@ -26,11 +26,11 @@ router.post('/', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        const itineraries = await db.prepare('SELECT * FROM saved_itineraries WHERE user_id = ? ORDER BY created_at DESC').all(userId);
+        const itineraries = await db.query('SELECT * FROM saved_itineraries WHERE user_id = ? ORDER BY created_at DESC', [userId]);
 
         const parsed = itineraries.map((it: any) => ({
             ...it,
-            content: JSON.parse(it.content)
+            content: typeof it.content === 'string' ? JSON.parse(it.content) : it.content
         }));
 
         res.json(parsed);
@@ -43,7 +43,7 @@ router.get('/user/:userId', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        await db.prepare('DELETE FROM saved_itineraries WHERE id = ?').run(id);
+        await db.exec('DELETE FROM saved_itineraries WHERE id = ?', [id]);
         res.json({ success: true });
     } catch (error) {
         console.error("Failed to delete itinerary:", error);
@@ -54,10 +54,10 @@ router.delete('/:id', async (req, res) => {
 router.patch('/:id/adjust', async (req, res) => {
     try {
         const { id } = req.params;
-        const it = await db.prepare('SELECT * FROM saved_itineraries WHERE id = ?').get(id) as any;
+        const it = await db.queryOne('SELECT * FROM saved_itineraries WHERE id = ?', [id]);
         if (!it) return res.status(404).json({ error: 'Itinerary not found' });
 
-        const content = JSON.parse(it.content);
+        const content = typeof it.content === 'string' ? JSON.parse(it.content) : it.content;
         const cityData = CITY_DATA[it.city];
 
         if (!cityData || !content.stops) {
@@ -81,7 +81,7 @@ router.patch('/:id/adjust', async (req, res) => {
 
         if (adjusted) {
             content.stops = newStops;
-            await db.prepare('UPDATE saved_itineraries SET content = ? WHERE id = ?').run(JSON.stringify(content), id);
+            await db.exec('UPDATE saved_itineraries SET content = ? WHERE id = ?', [JSON.stringify(content), id]);
             res.json({ success: true, message: 'Itinerary adjusted for rain!', itinerary: { ...it, content } });
         } else {
             res.json({ success: true, message: 'No outdoor spots found to adjust.' });

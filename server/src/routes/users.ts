@@ -10,7 +10,7 @@ router.patch('/:id', async (req, res) => {
         const updates = req.body;
 
         // Allowed fields to update
-        const allowed = ['name', 'phone', 'city', 'bio', 'avatar', 'preferences', 'favorites'];
+        const allowed = ['name', 'phone', 'city', 'bio', 'avatar', 'preferences', 'favorites', 'hourly_rate', 'languages', 'specializations', 'dob', 'location', 'aadhar_number'];
         const keys = Object.keys(updates).filter(k => allowed.includes(k));
 
         if (keys.length === 0) {
@@ -27,7 +27,7 @@ router.patch('/:id', async (req, res) => {
         // Add ID to end
         values.push(id);
 
-        const info = await db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`).run(...values);
+        const info = await db.exec(`UPDATE users SET ${setClause} WHERE id = ?`, values);
 
         // SYNC WITH GUIDES TABLE
         const guideFields = ['name', 'avatar', 'location', 'bio', 'hourly_rate', 'specialties', 'languages', 'experience'];
@@ -46,7 +46,7 @@ router.patch('/:id', async (req, res) => {
             gValues.push(id);
 
             try {
-                await db.prepare(`UPDATE guides SET ${gSetClause} WHERE id = ?`).run(...gValues);
+                await db.exec(`UPDATE guides SET ${gSetClause} WHERE id = ?`, gValues);
             } catch (e) {
                 // Ignore if not a guide
             }
@@ -54,7 +54,7 @@ router.patch('/:id', async (req, res) => {
 
         if (info.changes > 0) {
             // Fetch updated
-            const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id) as any;
+            const user = await db.queryOne('SELECT * FROM users WHERE id = ?', [id]);
             res.json({ success: true, user });
         } else {
             res.status(404).json({ error: 'User not found' });
@@ -68,7 +68,7 @@ router.patch('/:id', async (req, res) => {
 // GET /api/users/:id (Helper)
 router.get('/:id', async (req, res) => {
     try {
-        const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+        const user = await db.queryOne('SELECT * FROM users WHERE id = ?', [req.params.id]);
         if (user) res.json(user);
         else res.status(404).json({ error: 'User not found' });
     } catch (error) {

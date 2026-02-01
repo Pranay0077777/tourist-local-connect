@@ -13,6 +13,7 @@ interface GuideSignUpProps {
 
 export function GuideSignUp({ onSuccess, onBack }: GuideSignUpProps) {
     const [step, setStep] = useState(1);
+    const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: '', email: '', password: '', phone: '', city: '',
         aadharNumber: '', hourlyRate: '', languages: '', specializations: '', dob: ''
@@ -47,6 +48,7 @@ export function GuideSignUp({ onSuccess, onBack }: GuideSignUpProps) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
 
         try {
             const data = await api.register({
@@ -70,6 +72,8 @@ export function GuideSignUp({ onSuccess, onBack }: GuideSignUpProps) {
         } catch (error: any) {
             console.error("Registration failed", error);
             toast.error(error.message || "Registration failed. Try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -109,8 +113,12 @@ export function GuideSignUp({ onSuccess, onBack }: GuideSignUpProps) {
                                     Back
                                 </Button>
                             )}
-                            <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
-                                {step === 1 ? 'Next Step' : 'Complete Registration'}
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-green-600 hover:bg-green-700"
+                            >
+                                {step === 1 ? 'Next Step' : (isLoading ? 'Registering...' : 'Complete Registration')}
                             </Button>
                         </div>
                     </form>

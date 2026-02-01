@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
             return;
         }
 
-        let query = 'SELECT b.*, g.name as guideName, g.avatar as guideAvatar, u.name as userName, u.avatar as userAvatar FROM bookings b LEFT JOIN guides g ON b.guide_id = g.id LEFT JOIN users u ON b.user_id = u.id';
+        let query = 'SELECT b.*, g.name as "guideName", g.avatar as "guideAvatar", u.name as "userName", u.avatar as "userAvatar" FROM bookings b LEFT JOIN guides g ON b.guide_id = g.id LEFT JOIN users u ON b.user_id = u.id';
 
         if (role === 'guide') {
             query += ' WHERE b.guide_id = ?';
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
             query += ' WHERE b.user_id = ?';
         }
 
-        const bookings = await db.prepare(query).all(userId);
+        const bookings = await db.query(query, [userId]);
         res.json(bookings);
     } catch (error) {
         console.error(error);
@@ -44,8 +44,8 @@ router.post('/', async (req: any, res) => {
         // Use provided userId or fallback to guest
         const effectiveUserId = userId || `guest_${Math.random().toString(36).substring(7)}`;
 
-        await db.prepare('INSERT INTO bookings (id, guide_id, user_id, date, time, status, total_price, guests, tour_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            .run(id, guideId, effectiveUserId, date, time || '10:00 AM', status, price, guests || 1, tourType || 'Custom Tour');
+        await db.exec('INSERT INTO bookings (id, guide_id, user_id, date, time, status, total_price, guests, tour_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, guideId, effectiveUserId, date, time || '10:00 AM', status, price, guests || 1, tourType || 'Custom Tour']);
 
         const booking = {
             id,
@@ -77,22 +77,22 @@ router.patch('/:id', async (req: any, res) => {
         const { status } = req.body;
         const { id } = req.params;
 
-        const info = await db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run(status, id);
+        const info = await db.exec('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
 
         if (info.changes > 0) {
             // Fetch updated booking
-            const updatedBooking = await db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as any;
+            const updatedBooking = await db.queryOne('SELECT * FROM bookings WHERE id = ?', [id]);
 
             // SMART AVAILABILITY: If confirmed, mark that date as BUSY for the guide
             if (status === 'confirmed' && updatedBooking) {
                 try {
                     const { guide_id, date } = updatedBooking;
                     const slotId = `${guide_id}_${date}`;
-                    await db.prepare(`
+                    await db.exec(`
                         INSERT INTO guide_availability_slots (id, guide_id, date, status)
                         VALUES (?, ?, ?, 'busy')
                         ON CONFLICT(id) DO UPDATE SET status = 'busy'
-                    `).run(slotId, guide_id, date);
+                    `, [slotId, guide_id, date]);
                     console.log(`Smart Availability: Marked ${date} as busy for guide ${guide_id}`);
                 } catch (e) {
                     console.error("Failed to update availability slot", e);

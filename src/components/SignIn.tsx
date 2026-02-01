@@ -15,11 +15,13 @@ interface SignInProps {
 }
 
 export function SignIn({ role, onSuccess, onBack, onSwitchToSignUp }: SignInProps) {
+    const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
 
         try {
             const data = await api.login({ email, role, password });
@@ -27,6 +29,7 @@ export function SignIn({ role, onSuccess, onBack, onSwitchToSignUp }: SignInProp
             // Client-side double check (optional but good for UX)
             if (data.user.role !== role) {
                 toast.error(`Please login via ${data.user.role === 'guide' ? 'Guide' : 'Traveller'} Portal`);
+                setIsLoading(false);
                 return;
             }
 
@@ -38,6 +41,8 @@ export function SignIn({ role, onSuccess, onBack, onSwitchToSignUp }: SignInProp
             console.error("Login failed", error);
             // Show specific error from backend
             toast.error(error.message || "Invalid credentials or role mismatch.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -87,8 +92,12 @@ export function SignIn({ role, onSuccess, onBack, onSwitchToSignUp }: SignInProp
                                 required
                             />
                         </div>
-                        <Button type="submit" className={`w-full ${isGuide ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                            Sign In
+                        <Button
+                            type="submit"
+                            disabled={isLoading}
+                            className={`w-full ${isGuide ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                        >
+                            {isLoading ? 'Signing In...' : 'Sign In'}
                         </Button>
                     </form>
                 </CardContent>

@@ -120,10 +120,8 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
             setCurrentUser(updatedUser);
             toast.success("Profile updated successfully!");
 
-            // Force reload to ensure header updates (due to potential state/caching issues)
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
+            // No need for a full reload, as the local session is updated.
+            // If the header doesn't update, we can trigger a soft navigation or state update.
 
         } catch (error) {
             console.error("Failed to update profile", error);
