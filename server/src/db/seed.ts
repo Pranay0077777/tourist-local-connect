@@ -4,16 +4,25 @@ import bcrypt from 'bcryptjs';
 const manualGuides = [
     { name: "Priya Raman", avatar: "/uploads/avatars/tamil_nadu_chennai_female_2_priya_1769952720538.png", gender: "females", city: "Chennai" },
     { name: "Rajesh Murthy", avatar: "/uploads/avatars/telangana_hyderabad_male_rajesh_1769953179628.png", gender: "males", city: "Hyderabad" },
-    { name: "Anjali Menon", avatar: "/uploads/avatars/kerala_kochi_female_anjali_menon_1769952684024_1769953241110.png", gender: "females", city: "Kochi" },
+    { name: "Amrutha Menon", avatar: "/uploads/avatars/amrutha_menon_kochi.jpg", gender: "females", city: "Kochi" },
     { name: "Vikram Reddy", avatar: "/uploads/avatars/vikram_reddy_bengaluru_1769952126568.png", gender: "males", city: "Bengaluru" },
     { name: "Arjun Kumar", avatar: "/uploads/avatars/arjun_kumar_hyderabad_1769952142020.png", gender: "males", city: "Hyderabad" },
     { name: "Meera Reddy", avatar: "/uploads/avatars/telangana_hyderabad_female_meera_reddy_1769952217602_1769953199300.png", gender: "females", city: "Hyderabad" },
     { name: "Karthik Menon", avatar: "/uploads/avatars/kerala_kochi_male_karthik_menon_1769952701470_1769953258667.png", gender: "males", city: "Kochi" },
-    { name: "Kavita Nair", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop", gender: "females", city: "Thiruvananthapuram" },
+
     { name: "Aditya Iyer", avatar: "/uploads/avatars/aditya_iyer_bengaluru_1769952159382.png", gender: "males", city: "Bengaluru" },
     { name: "Lakshmi Iyer", avatar: "/uploads/avatars/lakshmi_iyer_hyderabad_1769952176312.png", gender: "females", city: "Hyderabad" },
     { name: "Deepa Krishnan", avatar: "/uploads/avatars/deepa_krishnan_madurai_1769952198656.png", gender: "females", city: "Madurai" },
-    { name: "Suresh Naidu", avatar: "/uploads/avatars/suresh_naidu_hyderabad_1769952217602.png", gender: "males", city: "Hyderabad" }
+    { name: "Suresh Naidu", avatar: "/uploads/avatars/suresh_naidu_hyderabad_1769952217602.png", gender: "males", city: "Hyderabad" },
+    { name: "Shanthi Bhat", avatar: "/uploads/avatars/shanthi_bhat_mysuru.jpg", gender: "females", city: "Mysuru" },
+    { name: "Sita Reddy", avatar: "/uploads/avatars/sita_reddy_visakhapatnam.jpg", gender: "females", city: "Visakhapatnam" },
+    { name: "Vishnu Nair", avatar: "/uploads/avatars/vishnu_nair_kerala.jpg", gender: "males", city: "Thiruvananthapuram" },
+    { name: "Srinivasa Raju", avatar: "/uploads/avatars/srinivasa_raju_visakhapatnam.jpg", gender: "males", city: "Visakhapatnam" },
+    { name: "Sathish Chowdary", avatar: "/uploads/avatars/sathish_chowdary_visakhapatnam.jpg", gender: "males", city: "Visakhapatnam" },
+    { name: "Lakshmi Chowdary", avatar: "/uploads/avatars/lakshmi_chowdary_visakhapatnam.jpg", gender: "females", city: "Visakhapatnam" },
+    { name: "Gopi Raju", avatar: "/uploads/avatars/gopi_raju_visakhapatnam.jpg", gender: "males", city: "Visakhapatnam" },
+    { name: "Naveen Shetty", avatar: "/uploads/avatars/naveen_shetty_karnataka.jpg", gender: "males", city: "Bengaluru" },
+    { name: "Kavitha Nair", avatar: "/uploads/avatars/kavitha_nair_thiruvananthapuram.jpg", gender: "females", city: "Thiruvananthapuram" }
 ];
 
 const stateData: Record<string, any> = {
