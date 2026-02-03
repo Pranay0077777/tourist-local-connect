@@ -87,6 +87,20 @@ app.use('/api/community', communityRoutes);
 const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
+// Serve static frontend in production
+if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+    const distPath = path.join(__dirname, '../../dist');
+    app.use(express.static(distPath));
+
+    // Handle SPA routing
+    app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+            return next();
+        }
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+}
+
 // Basic Health Check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
