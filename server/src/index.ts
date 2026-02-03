@@ -87,20 +87,6 @@ app.use('/api/community', communityRoutes);
 const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
-// Serve static frontend in production
-if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
-    const distPath = path.join(__dirname, '../../dist');
-    app.use(express.static(distPath));
-
-    // Handle SPA routing
-    app.get('*', (req, res, next) => {
-        if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
-            return next();
-        }
-        res.sendFile(path.join(distPath, 'index.html'));
-    });
-}
-
 // Basic Health Check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
@@ -224,8 +210,7 @@ app.use((err: any, req: any, res: any, next: any) => {
 });
 
 // Start Server
-const shouldListen = process.env.NODE_ENV !== 'production' || process.env.RENDER || process.env.PORT;
-if (shouldListen && !process.env.VERCEL) {
+if (process.env.NODE_ENV !== 'production') {
     httpServer.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
         console.log('Socket.io initialized');
