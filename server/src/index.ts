@@ -210,7 +210,8 @@ app.use((err: any, req: any, res: any, next: any) => {
 });
 
 // Start Server
-if (process.env.NODE_ENV !== 'production') {
+const shouldListen = process.env.NODE_ENV !== 'production' || process.env.RENDER || process.env.PORT;
+if (shouldListen && !process.env.VERCEL) {
     httpServer.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
         console.log('Socket.io initialized');
