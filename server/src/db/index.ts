@@ -5,10 +5,8 @@ dotenv.config();
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
-if (!DATABASE_URL) {
-    console.error("FATAL: DATABASE_URL is not defined in .env");
-    process.exit(1);
-}
+// DATABASE_URL check removed from top-level to prevent Vercel runtime crashes.
+// The DB constructor now handles missing credentials gracefully.
 
 class DB {
     private pgPool: Pool;
