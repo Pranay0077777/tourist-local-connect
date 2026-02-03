@@ -15,6 +15,13 @@ class DB {
 
     constructor() {
         console.log("DB: Initializing PostgreSQL...");
+        if (!DATABASE_URL) {
+            console.error('CRITICAL: DATABASE_URL environment variable is missing!');
+            // Create a dummy pool to prevent crash, routes will handle errors
+            this.pgPool = new Pool();
+            return;
+        }
+
         this.pgPool = new Pool({
             connectionString: DATABASE_URL,
             ssl: { rejectUnauthorized: false }, // Required for Neon/Supabase
