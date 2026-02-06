@@ -13,9 +13,12 @@ class DB {
 
     constructor() {
         console.log("DB: Initializing PostgreSQL...");
+
+        const isProduction = process.env.NODE_ENV === 'production' || DATABASE_URL?.includes('render.com') || DATABASE_URL?.includes('supabase.co') || DATABASE_URL?.includes('neon.tech');
+
         this.pgPool = new Pool({
             connectionString: DATABASE_URL,
-            ssl: { rejectUnauthorized: false }, // Required for Neon/Supabase
+            ssl: isProduction ? { rejectUnauthorized: false } : false,
             max: 20,
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 15000, // Increased for cloud wake-up
