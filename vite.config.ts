@@ -65,5 +65,18 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-core': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['lucide-react', 'sonner', 'framer-motion'],
+          'vendor-maps': ['leaflet', 'react-leaflet'],
+          'vendor-charts': ['recharts']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
   }
 })
