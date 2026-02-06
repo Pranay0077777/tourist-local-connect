@@ -32,12 +32,60 @@ export function EarningsPage({ user, onNavigate, onLogout }: EarningsPageProps) 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
+
+            // MOCK DATA FOR PRESENTATION (tester@gmail.com)
+            if (user.email === 'tester@gmail.com') {
+                const mockSummary = {
+                    today: 3500,
+                    yesterday: 2800,
+                    thisWeek: 18500,
+                    total: 85000
+                };
+
+                let mockGraph: any[] = [];
+                if (period === 'daily') {
+                    mockGraph = [
+                        { name: '08:00', value: 0 },
+                        { name: '10:00', value: 1200 },
+                        { name: '12:00', value: 1800 },
+                        { name: '14:00', value: 0 },
+                        { name: '16:00', value: 500 },
+                        { name: '18:00', value: 0 },
+                        { name: '20:00', value: 0 },
+                    ];
+                } else if (period === 'weekly') {
+                    mockGraph = [
+                        { name: 'Mon', value: 2100 },
+                        { name: 'Tue', value: 3500 },
+                        { name: 'Wed', value: 1200 },
+                        { name: 'Thu', value: 4800 },
+                        { name: 'Fri', value: 3200 },
+                        { name: 'Sat', value: 5400 },
+                        { name: 'Sun', value: 2800 },
+                    ];
+                } else if (period === 'monthly') {
+                    mockGraph = [
+                        { name: 'Jan', value: 8500 },
+                        { name: 'Feb', value: 12400 },
+                        { name: 'Mar', value: 9800 },
+                        { name: 'Apr', value: 15600 },
+                        { name: 'May', value: 14200 },
+                        { name: 'Jun', value: 24500 },
+                    ];
+                }
+
+                setData(mockGraph);
+                setSummary(mockSummary);
+                setLoading(false);
+                return;
+            }
+
             try {
-                // Fetch mock earnings from backend
+                // Fetch mock earnings from backend for regular users
                 const res = await fetch(`http://localhost:3001/api/guides/${user.id}/earnings?period=${period}`);
                 const json = await res.json();
-                setData(json.graph);
-                setSummary(json.summary);
+                setData(json.graph || []);
+                setSummary(json.summary || { today: 0, yesterday: 0, thisWeek: 0, total: 0 });
             } catch (error) {
                 console.error("Failed to fetch earnings", error);
             } finally {
@@ -46,7 +94,7 @@ export function EarningsPage({ user, onNavigate, onLogout }: EarningsPageProps) 
         };
 
         fetchData();
-    }, [user.id, period]);
+    }, [user.id, period, user.email]);
 
     return (
         <div className="min-h-screen bg-gray-50">

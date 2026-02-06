@@ -5,8 +5,8 @@ import { type LocalUser } from "@/lib/localStorage";
 import { Button } from "./ui/button";
 import { Heart, MessageCircle, MapPin, Send, Image as ImageIcon, Loader2, Eye, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-
-
+import { api } from "@/lib/api";
+import { useRef } from "react";
 interface Post {
     id: string;
     user_id: string;
@@ -19,7 +19,7 @@ interface Post {
     views: number;
     comments: { id?: string; userName: string; text: string; timestamp: string }[];
     created_at: string;
-    liked?: boolean; // For UI state
+    liked?: boolean;
 }
 
 interface CommunityFeedProps {
@@ -28,22 +28,39 @@ interface CommunityFeedProps {
     onLogout: () => void;
 }
 
-import { useRef } from "react"; // Add useRef
 // ... imports
 
 export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps) {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [newPostContent, setNewPostContent] = useState("");
-    const [newPostCity, setNewPostCity] = useState("Chennai"); // Default
+    const [newPostCity, setNewPostCity] = useState("");
     const [isPosting, setIsPosting] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [availableCities, setAvailableCities] = useState<string[]>([]);
+    const [selectedCityFilter, setSelectedCityFilter] = useState<string>("All");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Fetch Posts
+    // Fetch Cities and Posts
     useEffect(() => {
-        fetch('/api/community/posts')
+        // Fetch metadata for cities
+        api.fetchMetadata().then((meta: any) => {
+            setAvailableCities(meta.cities);
+            if (meta.cities.length > 0) {
+                // If user has a city, default to that, else first city
+                const userCity = user.city ? user.city.split(',')[0].trim() : meta.cities[0];
+                setNewPostCity(userCity);
+            }
+        }).catch(console.error);
+
+        fetchPosts();
+    }, []);
+
+    const fetchPosts = (city?: string) => {
+        setLoading(true);
+        const url = city && city !== "All" ? `/api/community/posts?city=${city}` : '/api/community/posts';
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 setPosts(data.map((p: any) => ({ ...p, liked: false })));
@@ -53,33 +70,57 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
                 console.error(err);
                 setLoading(false);
             });
-    }, []);
+    };
+
+    const handleCityFilterChange = (city: string) => {
+        setSelectedCityFilter(city);
+        fetchPosts(city);
+    };
 
     const handleLike = async (id: string) => {
         setPosts(prev => prev.map(p => p.id === id ? { ...p, likes: p.likes + 1, liked: true } : p));
         await fetch(`/api/community/posts/${id}/like`, { method: 'POST' });
     };
 
-    const handleComment = async (id: string, text: string) => {
+    const handleComment = async (postId: string, text: string) => {
         if (!text.trim()) return;
 
-        // Optimistic UI update
-        const newComment = { userName: user.name, text, timestamp: new Date().toISOString() };
-        setPosts(prev => prev.map(p =>
-            p.id === id ? { ...p, comments: [...p.comments, newComment] } : p
+        const tempId = `temp_${Date.now()}`;
+        const optimisticComment = { id: tempId, userName: user.name, text, timestamp: new Date().toISOString() };
+
+        setPosts(prev => prev.map((p: Post) =>
+            p.id === postId ? { ...p, comments: [...p.comments, optimisticComment] } : p
         ));
 
-        await fetch(`/api/community/posts/${id}/comment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userName: user.name, text })
-        });
+        try {
+            const res = await fetch(`/api/community/posts/${postId}/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userName: user.name, text })
+            });
+            const data = await res.json();
+
+            if (data.success && data.newComment) {
+                setPosts(prev => prev.map(p =>
+                    p.id === postId
+                        ? { ...p, comments: p.comments.map(c => c.id === tempId ? data.newComment : c) }
+                        : p
+                ));
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to post comment");
+            // Rollback optimistic update
+            setPosts(prev => prev.map(p =>
+                p.id === postId ? { ...p, comments: p.comments.filter(c => c.id !== tempId) } : p
+            ));
+        }
     };
 
     const handleDeleteComment = async (postId: string, commentId: string) => {
-        setPosts(prev => prev.map(p => {
+        setPosts(prev => prev.map((p: Post) => {
             if (p.id === postId) {
-                return { ...p, comments: p.comments.filter(c => c.id !== commentId) };
+                return { ...p, comments: p.comments.filter((c: any) => c.id !== commentId) };
             }
             return p;
         }));
@@ -169,6 +210,28 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
             <RoleAwareHeader user={user} currentPage="community" onNavigate={onNavigate} onLogout={onLogout} />
 
             <main className="container mx-auto px-4 py-8 max-w-2xl">
+                {/* City Filter Bar */}
+                <div className="mb-8 space-y-4">
+                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Filter by City</h2>
+                    <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
+                        <button
+                            onClick={() => handleCityFilterChange("All")}
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap border ${selectedCityFilter === "All" ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-gray-700 border-gray-100 hover:border-indigo-600 hover:text-indigo-600'}`}
+                        >
+                            All Stories
+                        </button>
+                        {availableCities.map(city => (
+                            <button
+                                key={city}
+                                onClick={() => handleCityFilterChange(city)}
+                                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap border ${selectedCityFilter === city ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-gray-700 border-gray-100 hover:border-indigo-600 hover:text-indigo-600'}`}
+                            >
+                                {city}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Create Post Widget */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                     <div className="flex gap-4">
@@ -209,12 +272,10 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
                                             onChange={(e) => setNewPostCity(e.target.value)}
                                             className="bg-transparent outline-none cursor-pointer"
                                         >
-                                            <option value="Chennai">Chennai</option>
-                                            <option value="Hyderabad">Hyderabad</option>
-                                            <option value="Bangalore">Bangalore</option>
-                                            <option value="Kochi">Kochi</option>
-                                            <option value="Madurai">Madurai</option>
-                                            <option value="Mumbai">Mumbai</option>
+                                            <option value="" disabled>Select City</option>
+                                            {availableCities.map(city => (
+                                                <option key={city} value={city}>{city}</option>
+                                            ))}
                                         </select>
                                     </div>
 
@@ -250,11 +311,11 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
                 {/* Feed */}
                 <div className="space-y-6">
                     {loading ? (
-                        [1, 2, 3].map(i => (
+                        [1, 2, 3].map((i: number) => (
                             <div key={i} className="h-64 bg-gray-200 animate-pulse rounded-xl" />
                         ))
                     ) : posts.length > 0 ? (
-                        posts.map(post => (
+                        posts.map((post: Post) => (
                             <PostCard
                                 key={post.id}
                                 post={post}
@@ -367,11 +428,11 @@ function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { p
                             <div key={i} className="flex gap-2 text-sm group/comment items-start">
                                 <span className="font-bold text-gray-900 whitespace-nowrap">{c.userName}:</span>
                                 <span className="text-gray-700 flex-1 break-words">{c.text}</span>
-                                {(c.userName === currentUser.name || c.userName === currentUser.email) && c.id && (
+                                {(c.userName === currentUser.name || c.userName === currentUser.email || post.user_id === currentUser.id) && c.id && (
                                     <button
                                         onClick={() => onDeleteComment(c.id!)}
-                                        className="text-gray-300 hover:text-red-500 transition-colors p-1"
-                                        title="Delete comment"
+                                        className="text-gray-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover/comment:opacity-100"
+                                        title={post.user_id === currentUser.id ? "Delete as post owner" : "Delete comment"}
                                     >
                                         <Trash2 className="w-3.5 h-3.5" />
                                     </button>

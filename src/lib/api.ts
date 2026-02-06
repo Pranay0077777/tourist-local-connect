@@ -1,5 +1,5 @@
 import { type Guide, type Review } from "@/types";
-import { type LocalUser } from "@/lib/localStorage";
+import { type LocalUser, updateBookingStatus as updateLocalBookingStatus } from "@/lib/localStorage";
 
 export interface SearchFilters {
     query?: string;
@@ -12,19 +12,17 @@ export interface SearchFilters {
 }
 
 const getRawApiUrl = () => {
-    let url = import.meta.env.VITE_API_URL || '';
-    if (!url) return '';
-    if (!url.startsWith('http')) {
-        url = `https://${url}`;
-    }
+    const url = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     return url.replace(/\/$/, '');
 };
 
 const API_URL = getRawApiUrl();
 
-// In-memory cache for metadata
+// In-memory cache for metadata to prevent redundant network trips
 let metadataCache: { cities: string[], languages: string[], specialties: string[] } | null = null;
 let metadataPromise: Promise<any> | null = null;
+let statsCache: Record<string, { data: any, timestamp: number }> = {};
+const STATS_CACHE_TTL = 30000; // 30 seconds
 
 export const api = {
     /**
@@ -97,13 +95,19 @@ export const api = {
             } catch (e) {
                 console.error("Metadata fetch failed, falling back", e);
             }
-            // Fallback: fetch all and extract (original logic)
-            const guides = await api.fetchGuides();
-            const cities = Array.from(new Set(guides.map((g: any) => g.location.split(',')[0].trim()))).sort();
-            const languages = Array.from(new Set(guides.flatMap((g: any) => g.languages))).sort();
-            const specialties = Array.from(new Set(guides.flatMap((g: any) => g.specialties))).sort();
-            metadataCache = { cities, languages, specialties };
-            return metadataCache;
+            // Fallback: fetch directly from guides
+            try {
+                const res = await fetch(`${API_URL}/api/guides`);
+                if (!res.ok) throw new Error("Metadata fallback failed");
+                const guides = await res.json();
+                const cities = Array.from(new Set(guides.map((g: any) => g.location.split(',')[0].trim()))) as string[];
+                const languages = Array.from(new Set(guides.flatMap((g: any) => g.languages))) as string[];
+                const specialties = Array.from(new Set(guides.flatMap((g: any) => g.specialties))) as string[];
+                metadataCache = { cities: cities.sort(), languages: languages.sort(), specialties: specialties.sort() };
+                return metadataCache;
+            } catch (e) {
+                return { cities: [], languages: [], specialties: [] };
+            }
         })();
 
         return metadataPromise;
@@ -168,32 +172,43 @@ export const api = {
     },
 
     /**
-     * Fetch dashboard stats for a guide (Simulated for now)
+     * Fetch dashboard stats for a guide - Optimized for "Infinity" Speed
      */
     getGuideStats: async (guideId: string) => {
+        // Cache check for instant navigation back
+        const cached = statsCache[guideId];
+        if (cached && (Date.now() - cached.timestamp < STATS_CACHE_TTL)) {
+            return cached.data;
+        }
+
         try {
+            const res = await fetch(`${API_URL}/api/guides/${guideId}/dashboard-stats`, {
+                headers: api.getHeaders()
+            });
+            if (!res.ok) throw new Error("Faster stats failed");
+            const data = await res.json();
+
+            // Background cache update
+            statsCache[guideId] = { data, timestamp: Date.now() };
+            return data;
+        } catch (error) {
+            console.error("Failed to fetch real stats, falling back to basic calculation", error);
+            // Fallback to legacy calculation if endpoint fails (safety net)
             const guide = await api.getGuideById(guideId);
             const bookings = await api.getBookingRequests(guideId);
-
             const completedTours = bookings.filter((b: any) => b.status === 'completed').length;
             const totalEarnings = bookings
                 .filter((b: any) => b.status === 'completed')
                 .reduce((acc: number, b: any) => acc + (b.totalPrice || 0), 0);
 
-            return {
-                totalEarnings: totalEarnings,
-                completedTours: completedTours,
-                profileViews: guide?.reviewCount || 0, // Fallback to reviews for "popularity"
+            const result = {
+                totalEarnings,
+                completedTours,
+                profileViews: guide?.reviewCount || 0,
                 rating: guide?.rating || 0
             };
-        } catch (error) {
-            console.error("Failed to fetch real stats", error);
-            return {
-                totalEarnings: 0,
-                completedTours: 0,
-                profileViews: 0,
-                rating: 0
-            };
+            statsCache[guideId] = { data: result, timestamp: Date.now() };
+            return result;
         }
     },
 
@@ -240,12 +255,25 @@ export const api = {
      * Update booking status
      */
     updateBookingStatus: async (bookingId: string, status: 'confirmed' | 'cancelled') => {
-        const res = await fetch(`${API_URL}/api/bookings/${bookingId}`, {
-            method: 'PATCH',
-            headers: api.getHeaders(),
-            body: JSON.stringify({ status })
-        });
-        return res.ok;
+        // If it's a demo booking, update local storage directly
+        if (bookingId.startsWith('demo_') || bookingId.startsWith('bk_demo')) {
+            return updateLocalBookingStatus(bookingId, status);
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/api/bookings/${bookingId}`, {
+                method: 'PATCH',
+                headers: api.getHeaders(),
+                body: JSON.stringify({ status })
+            });
+
+            if (res.ok) return true;
+        } catch (e) {
+            console.warn("Backend booking update failed, checking local storage", e);
+        }
+
+        // Fallback: try local storage if backend failed or returned error
+        return updateLocalBookingStatus(bookingId, status);
     },
 
     /**

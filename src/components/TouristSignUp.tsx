@@ -18,7 +18,22 @@ export function TouristSignUp({ onSuccess, onBack }: TouristSignUpProps) {
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        if (name === 'phone') {
+            const digits = value.replace(/\D/g, '');
+            // Do not allow starting with 0
+            if (digits.startsWith('0')) {
+                toast.error("Phone number cannot start with zero");
+                return;
+            }
+            if (digits.length <= 10) {
+                setFormData(prev => ({ ...prev, phone: digits }));
+            }
+            return;
+        }
+
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -39,8 +54,8 @@ export function TouristSignUp({ onSuccess, onBack }: TouristSignUpProps) {
             return;
         }
 
-        if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-            toast.error("Please enter a valid 10-digit phone number");
+        if (formData.phone && formData.phone.length !== 10) {
+            toast.error("Please enter an exact 10-digit phone number");
             setIsLoading(false);
             return;
         }

@@ -16,12 +16,14 @@ interface BrowseGuidesProps {
 }
 
 const cityImages: Record<string, string> = {
-    'Chennai': 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=800',
-    'Bengaluru': 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&q=80&w=800',
-    'Hyderabad': 'https://images.unsplash.com/photo-1572431441527-03266d627ec3?auto=format&fit=crop&q=80&w=800',
-    'Kochi': 'https://images.unsplash.com/photo-1593504049359-74330189a355?auto=format&fit=crop&q=80&w=800',
-    'Mysuru': 'https://images.unsplash.com/photo-1600100397608-f0109968edf9?auto=format&fit=crop&q=80&w=800',
-    'Madurai': 'https://images.unsplash.com/photo-1580913956667-6284d7286377?auto=format&fit=crop&q=80&w=800',
+    'Chennai': '/uploads/cities/chennai.png',
+    'Bengaluru': '/uploads/cities/bengaluru.png',
+    'Hyderabad': '/uploads/cities/hyderabad.png',
+    'Kochi': '/uploads/cities/kochi.png',
+    'Mysuru': '/uploads/cities/mysuru.png',
+    'Madurai': '/uploads/cities/madurai.png',
+    'Thiruvananthapuram': '/uploads/cities/thiruvananthapuram.png',
+    'Visakhapatnam': '/uploads/cities/visakhapatnam.png',
 };
 
 export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initialCity, initialBrowseMode }: BrowseGuidesProps) {
@@ -31,11 +33,16 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
     const [totalGuides, setTotalGuides] = useState<any[]>([]); // For city counts
     const [loading, setLoading] = useState(true);
     const [availableCities, setAvailableCities] = useState<string[]>([]);
+    const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
     useEffect(() => {
         api.getAvailableCities().then(setAvailableCities).catch(console.error);
+        // Only fetch once at the start to get all guides for counts
         api.fetchGuides().then(setTotalGuides).catch(console.error);
-    }, []);
+        if (user) {
+            api.getFavorites(user.id).then(setFavoriteIds).catch(console.error);
+        }
+    }, [user?.id]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -52,13 +59,28 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
             }
         };
 
-        const timeoutId = setTimeout(fetchData, 300);
+        // Reduced debounce to 50ms for "Infinity" speed feel
+        const timeoutId = setTimeout(fetchData, 50);
         return () => clearTimeout(timeoutId);
     }, [searchQuery]);
 
+    const fetchGuidesImmediate = async (query: string) => {
+        setLoading(true);
+        try {
+            const results = await api.fetchGuides({ query });
+            setGuides(results);
+        } catch (error) {
+            console.error("Failed to fetch guides", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleCityClick = (city: string) => {
+        // Instant response for city categories
         setSearchQuery(city);
         setView('guides');
+        fetchGuidesImmediate(city);
     };
 
     return (
@@ -124,7 +146,7 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
                                     className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                                 >
                                     <img
-                                        src={(cityImages[city] || `https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=400`).replace('w=800', 'w=400')}
+                                        src={cityImages[city] || `/uploads/cities/generic.png`}
                                         alt={city}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                     />
@@ -194,6 +216,12 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
                                                         key={guide.id}
                                                         guide={guide}
                                                         user={user}
+                                                        isFavorite={favoriteIds.includes(guide.id)}
+                                                        onToggleFavorite={(id: string, status: boolean) => {
+                                                            setFavoriteIds(prev =>
+                                                                status ? [...prev, id] : prev.filter(fid => fid !== id)
+                                                            );
+                                                        }}
                                                         onViewProfile={onViewProfile}
                                                     />
                                                 ))}

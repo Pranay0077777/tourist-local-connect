@@ -166,7 +166,8 @@ export function Messages({ currentUser, onNavigate, onLogout, onViewProfile, ini
         setInputText("");
         socket.emit('typing_stop', { roomId });
 
-        setTimeout(loadConversations, 500);
+        // Reduced delay for immediate feedback
+        setTimeout(loadConversations, 50);
     };
 
     return (

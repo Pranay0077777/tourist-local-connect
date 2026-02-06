@@ -44,26 +44,37 @@ export function AdminDashboard({ currentUser, onNavigate, onLogout }: AdminDashb
         }));
     };
 
-    const handleVerification = (userId: string, action: 'approve' | 'reject') => {
-        const users = getUsers(); // Re-fetch to be safe
-        const updatedUsers = users.map(u => {
-            if (u.id === userId) {
-                return {
-                    ...u,
-                    verificationStatus: action === 'approve' ? 'verified' : 'rejected'
-                } as LocalUser;
+    const handleVerification = async (userId: string, action: 'approve' | 'reject') => {
+        try {
+            if (action === 'approve') {
+                const res = await fetch(`http://localhost:3001/api/guides/${userId}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentUser.token}`
+                    }
+                });
+                if (!res.ok) throw new Error("Failed to verify on backend");
             }
-            return u;
-        });
 
-        // Save back to local storage manually since we don't have a batch save helper exposed, 
-        // using the singular saveUser might be inefficient if we had one, but strict replace is better here.
-        // We'll trust our saveUser helper matches uniqueness by ID? Actually saveUser matches by EMAIL.
-        // Let's use the raw localStorage set for safety here as we have the full array.
-        localStorage.setItem('tlc_users', JSON.stringify(updatedUsers));
+            // Sync local storage for consistency in UI
+            const users = getUsers();
+            const updatedUsers = users.map(u => {
+                if (u.id === userId) {
+                    return {
+                        ...u,
+                        verificationStatus: (action === 'approve' ? 'verified' : 'rejected') as LocalUser['verificationStatus']
+                    } as LocalUser;
+                }
+                return u;
+            });
 
-        loadData(); // Refresh UI
-        toast.success(`Guide ${action === 'approve' ? 'Approved' : 'Rejected'} successfully.`);
+            localStorage.setItem('tlc_users', JSON.stringify(updatedUsers));
+            loadData();
+            toast.success(`Guide ${action === 'approve' ? 'Approved' : 'Rejected'} successfully.`);
+        } catch (error) {
+            console.error("Verification error:", error);
+            toast.error("Failed to update verification status on server.");
+        }
     };
 
 

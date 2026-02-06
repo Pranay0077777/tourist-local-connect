@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, LayersControl, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -17,9 +17,10 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 interface TripMapProps {
     stops: { name: string; lat: number; lng: number; desc: string }[];
+    maximized?: boolean;
 }
 
-export function TripMap({ stops }: TripMapProps) {
+export function TripMap({ stops, maximized = false }: TripMapProps) {
     if (!stops || stops.length === 0) return null;
 
     // Calculate center
@@ -29,7 +30,7 @@ export function TripMap({ stops }: TripMapProps) {
     // Create polyline positions
     const polylinePositions = stops.map(stop => [stop.lat, stop.lng] as [number, number]);
 
-    // Calculate total distance (rough Haversine approximation or accumulative)
+    // Calculate total distance (rough Haversine approximation)
     const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
         const R = 6371; // km
         const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -47,38 +48,63 @@ export function TripMap({ stops }: TripMapProps) {
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-900">Trip Route Map</h3>
-                <span className="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded">
-                    Total Distance: ~{totalDistance.toFixed(1)} km
-                </span>
-            </div>
+        <div className="space-y-4 h-full flex flex-col">
+            {!maximized && (
+                <div className="flex items-center justify-between shrink-0">
+                    <h3 className="text-xl font-bold text-gray-900">Trip Route Map</h3>
+                    <span className="bg-primary/10 text-primary text-xs font-bold mr-2 px-3 py-1 rounded-full border border-primary/20">
+                        Total Distance: ~{totalDistance.toFixed(1)} km
+                    </span>
+                </div>
+            )}
 
-            <div className="h-[400px] w-full rounded-xl overflow-hidden shadow-lg border border-gray-100 z-0 relative">
+            <div className={`w-full rounded-2xl overflow-hidden shadow-2xl border-4 border-white z-0 relative flex-1 ${maximized ? 'h-full border-none rounded-none shadow-none' : 'h-[400px]'}`}>
+                {/* Global CSS to shift zoom controls in maximized mode */}
+                {maximized && (
+                    <style>{`
+                        .leaflet-top.leaflet-left {
+                            top: 88px !important;
+                            left: 14px !important;
+                        }
+                    `}</style>
+                )}
                 <MapContainer
                     center={[centerLat, centerLng]}
-                    zoom={12}
-                    scrollWheelZoom={false}
+                    zoom={maximized ? 14 : 12}
+                    scrollWheelZoom={true}
+                    zoomControl={false}
                     style={{ height: '100%', width: '100%' }}
                 >
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
+                    <ZoomControl position="topleft" />
+                    <LayersControl position="topright">
+                        <LayersControl.BaseLayer checked name="Street View">
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                        </LayersControl.BaseLayer>
+                        <LayersControl.BaseLayer name="Satellite View">
+                            <TileLayer
+                                attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                            />
+                        </LayersControl.BaseLayer>
+                    </LayersControl>
 
                     {stops.map((stop, idx) => (
                         <Marker key={idx} position={[stop.lat, stop.lng]}>
-                            <Popup>
-                                <strong>{idx + 1}. {stop.name}</strong><br />
-                                {stop.desc}
+                            <Popup minWidth={200}>
+                                <div className="p-1">
+                                    <p className="text-primary font-bold text-sm mb-1">{idx + 1}. {stop.name}</p>
+                                    <p className="text-gray-600 text-xs leading-tight m-0">{stop.desc}</p>
+                                </div>
                             </Popup>
                         </Marker>
                     ))}
 
                     <Polyline
                         positions={polylinePositions}
-                        pathOptions={{ color: 'blue', weight: 4, opacity: 0.7, dashArray: '10, 10' }}
+                        pathOptions={{ color: '#4f46e5', weight: 5, opacity: 0.8, dashArray: '12, 12' }}
                     />
                 </MapContainer>
             </div>

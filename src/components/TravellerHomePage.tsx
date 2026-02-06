@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { RoleAwareHeader } from "./RoleAwareHeader";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { Search, ArrowRight } from "lucide-react";
+import { Search, ArrowRight, ShieldHalf } from "lucide-react";
 import { type LocalUser } from "@/lib/localStorage";
+import { isAdmin } from "@/lib/adminUtils";
 import { api } from "@/lib/api";
 import { type Guide } from "@/types";
 
@@ -16,33 +17,33 @@ interface TravellerHomePageProps {
 const popularCities = [
     {
         name: "Chennai",
-        image: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?q=80&w=1974&auto=format&fit=crop", // Kapaleeshwarar Temple
-        description: "Kapaleeshwarar Temple"
+        image: "/uploads/cities/chennai.png",
+        description: "Historic Ripon Building"
     },
     {
         name: "Bengaluru",
-        image: "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?q=80&w=2070&auto=format&fit=crop", // Vidhana Soudha / Cityscape
-        description: "Vidhana Soudha & Gardens"
+        image: "/uploads/cities/bengaluru.png",
+        description: "Vidhana Soudha Architecture"
     },
     {
         name: "Kochi",
-        image: "https://plus.unsplash.com/premium_photo-1697730221799-f2aa87519636?q=80&w=2070&auto=format&fit=crop", // Chinese Fishing Nets
-        description: "Chinese Fishing Nets"
+        image: "/uploads/cities/kochi.png",
+        description: "Iconic Chinese Fishing Nets"
     },
     {
         name: "Hyderabad",
-        image: "https://images.unsplash.com/photo-1644941929421-4fa506482142?q=80&w=2070&auto=format&fit=crop", // Golconda Fort / Ruins vibe
-        description: "Golkonda Fort & Heritage"
+        image: "/uploads/cities/hyderabad.png",
+        description: "The Grand Charminar"
     },
     {
         name: "Mysuru",
-        image: "https://images.unsplash.com/photo-1606214227915-132d0ff846db?q=80&w=2070&auto=format&fit=crop", // Mysore Palace
-        description: "Mysore Palace"
+        image: "/uploads/cities/mysuru.png",
+        description: "Illuminated Mysore Palace"
     },
     {
-        name: "Puducherry",
-        image: "https://images.unsplash.com/photo-1616853244820-91c6e19d146c?q=80&w=2070&auto=format&fit=crop", // French Colony
-        description: "French Colony Streets"
+        name: "Thiruvananthapuram",
+        image: "/uploads/cities/thiruvananthapuram.png",
+        description: "Golden Padmanabhaswamy Temple"
     }
 ];
 
@@ -102,10 +103,24 @@ export function TravellerHomePage({ user, onNavigate, onLogout }: TravellerHomeP
             <main className="container mx-auto px-4 py-8 space-y-12">
                 {/* Hero Search Section - Simplified Layout */}
                 <div className="text-center space-y-6 py-8 md:py-12">
-                    <h1 className="text-4xl md:text-5xl font-heading font-bold text-gray-900 leading-tight">
-                        Explore South India <br />
+                    <div className="flex items-center justify-center gap-4">
+                        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight font-heading">
+                            Explore <span className="text-primary">South India</span>
+                        </h1>
+                        {isAdmin(user.email) && (
+                            <Button
+                                size="sm"
+                                className="bg-purple-600 hover:bg-purple-700 text-white gap-2 shadow-sm animate-bounce"
+                                onClick={() => onNavigate('admin')}
+                            >
+                                <ShieldHalf className="w-4 h-4" />
+                                Admin View
+                            </Button>
+                        )}
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-heading font-bold text-gray-900 leading-tight">
                         <span className="text-primary italic">Like a Local</span>
-                    </h1>
+                    </h2>
                     <p className="text-lg text-gray-500 max-w-2xl mx-auto">
                         Connect with verified guides who know the stories behind the stones, the spices in the food, and the secrets of the city.
                     </p>
@@ -149,7 +164,7 @@ export function TravellerHomePage({ user, onNavigate, onLogout }: TravellerHomeP
                             <h2 className="text-3xl font-heading font-bold text-gray-900">Popular Destinations</h2>
                             <p className="text-gray-500 mt-1">Found expert guides in these cities</p>
                         </div>
-                        <Button variant="link" className="text-primary font-semibold" onClick={() => onNavigate('browseGuides')}>
+                        <Button variant="link" className="text-primary font-semibold" onClick={() => onNavigate('browseGuides', { browseMode: 'cities' })}>
                             View all cities <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                     </div>

@@ -15,6 +15,19 @@ interface ProfileSettingsProps {
 export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [verificationStatus, setVerificationStatus] = useState<'idle' | 'processing' | 'verified'>('idle');
+    const parseArray = (val: any) => {
+        if (Array.isArray(val)) return val;
+        if (typeof val === 'string' && val.trim()) {
+            try {
+                const parsed = JSON.parse(val);
+                return Array.isArray(parsed) ? parsed : [parsed];
+            } catch (e) {
+                return val.split(',').map((s: string) => s.trim()).filter(Boolean);
+            }
+        }
+        return [];
+    };
+
     const [formData, setFormData] = useState({
         name: user.name,
         email: user.email,
@@ -22,10 +35,10 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
         city: user.city || "",
         bio: user.bio || "",
         avatar: user.avatar || "",
-        hourlyRate: 0,
-        specialties: [] as string[],
-        languages: [] as string[],
-        experience: "",
+        hourlyRate: user.hourly_rate || 0,
+        specialties: parseArray(user.specialties),
+        languages: parseArray(user.languages),
+        experience: user.experience || "",
         preferredLanguage: user.preferences?.language || "en"
     });
 
@@ -36,8 +49,8 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                     setFormData(prev => ({
                         ...prev,
                         hourlyRate: guide.hourlyRate,
-                        specialties: guide.specialties,
-                        languages: guide.languages,
+                        specialties: parseArray(guide.specialties),
+                        languages: parseArray(guide.languages),
                         experience: guide.experience || ""
                     }));
                     if (guide.verified) {
@@ -52,21 +65,32 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+
+        if (name === 'phone') {
+            const digits = value.replace(/\D/g, '');
+            // Do not allow starting with 0
+            if (digits.startsWith('0')) {
+                toast.error("Phone number cannot start with zero");
+                return;
+            }
+            if (digits.length <= 10) {
+                setFormData(prev => ({ ...prev, phone: digits }));
+            }
+            return;
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleVerify = async () => {
         setVerificationStatus('processing');
-        // Simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
 
         try {
             await fetch(`/api/guides/${user.id}/verify`, { method: 'POST' });
             setVerificationStatus('verified');
 
             // Update local session to reflect verification so Dashboard updates immediately
-            // Using aadhar_number as proxy for verification status till we have full backend sync
-            const updatedUser = { ...user, aadhar_number: "VERIFIED" };
+            const updatedUser = { ...user, verificationStatus: 'verified' as LocalUser['verificationStatus'] };
             setCurrentUser(updatedUser);
 
             toast.success("Identity Verified Successfully!");
@@ -80,8 +104,11 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
         e.preventDefault();
         setIsLoading(true);
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+        if (formData.phone && formData.phone.length !== 10) {
+            toast.error("Please enter an exact 10-digit phone number");
+            setIsLoading(false);
+            return;
+        }
 
         try {
             const updatedUser: LocalUser = {
@@ -102,8 +129,7 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
             };
 
             // Call API
-            console.log("Submitting profile update...", updatedUser);
-            await api.updateUser(user.id, {
+            api.updateUser(user.id, {
                 name: formData.name,
                 phone: formData.phone,
                 city: formData.city,
@@ -113,15 +139,16 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                 specialties: formData.specialties,
                 languages: formData.languages,
                 experience: formData.experience
+            }).catch(error => {
+                console.error("Delayed error handle: Failed to update profile on server", error);
+                toast.error("Profile update failed on server. Reverting...");
+                // Rollback local state if needed (optional for UX)
             });
 
-            // Update local session
-            console.log("Calling setCurrentUser with:", updatedUser.avatar);
+            // Update local session IMMEDIATELY (Optimistic UI)
             setCurrentUser(updatedUser);
-            toast.success("Profile updated successfully!");
-
-            // No need for a full reload, as the local session is updated.
-            // If the header doesn't update, we can trigger a soft navigation or state update.
+            toast.success("Profile updated instantly!");
+            setIsLoading(false);
 
         } catch (error) {
             console.error("Failed to update profile", error);
@@ -232,6 +259,10 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                                     onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
+                                            // 1. Instant Preview (Optimistic)
+                                            const previewUrl = URL.createObjectURL(file);
+                                            setFormData(prev => ({ ...prev, avatar: previewUrl }));
+
                                             const formData = new FormData();
                                             formData.append('image', file);
                                             try {

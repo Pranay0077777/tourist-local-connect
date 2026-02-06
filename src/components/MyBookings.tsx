@@ -1,4 +1,4 @@
-import { type LocalUser, type Booking } from "@/lib/localStorage";
+import { type LocalUser, type Booking, getBookingsForUser, getBookingsForGuide } from "@/lib/localStorage";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Calendar, ArrowLeft, Clock, MapPin, CheckCircle2, XCircle, Star, CreditCard, User } from "lucide-react";
@@ -35,10 +35,23 @@ export function MyBookings({ user, onNavigate }: MyBookingsProps) {
                     ? await api.getBookingRequests(user.id)
                     : await api.getBookings(user.id);
 
-                setBookings(apiBookings || []);
+                const localBookings = isGuide
+                    ? getBookingsForGuide(user.id)
+                    : getBookingsForUser(user.id);
+
+                // Merge and remove duplicates by ID
+                const allMapped = [...(apiBookings || []), ...(localBookings || [])];
+                const uniqueBookings = Array.from(new Map(allMapped.map(b => [b.id, b])).values());
+
+                // Sort by date descending
+                uniqueBookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                setBookings(uniqueBookings);
             } catch (error) {
                 console.error("Failed to load bookings", error);
-                setBookings([]);
+                // Fallback to local only on error
+                const localOnly = isGuide ? getBookingsForGuide(user.id) : getBookingsForUser(user.id);
+                setBookings(localOnly);
             } finally {
                 setLoading(false);
             }
@@ -226,10 +239,11 @@ export function MyBookings({ user, onNavigate }: MyBookingsProps) {
 
                                             {booking.status === 'confirmed' && (
                                                 <Button
-                                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white animate-pulse"
+                                                    className={`w-full ${isGuide ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`}
                                                     onClick={() => setSelectedBookingForTracking(booking)}
                                                 >
-                                                    <MapPin className="w-4 h-4 mr-2" /> Track Live
+                                                    <MapPin className="w-4 h-4 mr-2" />
+                                                    {isGuide ? "Track Live" : "Share Location"}
                                                 </Button>
                                             )}
 

@@ -8,11 +8,11 @@ const manualGuides = [
     { name: "Vikram Reddy", avatar: "/uploads/avatars/vikram_reddy_bengaluru_1769952126568.png", gender: "males", city: "Bengaluru" },
     { name: "Arjun Kumar", avatar: "/uploads/avatars/arjun_kumar_hyderabad_1769952142020.png", gender: "males", city: "Hyderabad" },
     { name: "Meera Reddy", avatar: "/uploads/avatars/telangana_hyderabad_female_meera_reddy_1769952217602_1769953199300.png", gender: "females", city: "Hyderabad" },
-    { name: "Karthik Menon", avatar: "/uploads/avatars/kerala_kochi_male_karthik_menon_1769952701470_1769953258667.png", gender: "males", city: "Kochi" },
+    { name: "Karthik Menon", avatar: "/uploads/avatars/karthik_menon_new.png", gender: "males", city: "Kochi" },
 
     { name: "Aditya Iyer", avatar: "/uploads/avatars/aditya_iyer_bengaluru_1769952159382.png", gender: "males", city: "Bengaluru" },
     { name: "Lakshmi Iyer", avatar: "/uploads/avatars/lakshmi_iyer_hyderabad_1769952176312.png", gender: "females", city: "Hyderabad" },
-    { name: "Deepa Krishnan", avatar: "/uploads/avatars/deepa_krishnan_madurai_1769952198656.png", gender: "females", city: "Madurai" },
+    { name: "Deepa Krishnan", avatar: "/uploads/avatars/deepa_krishnan_new.png", gender: "females", city: "Madurai" },
     { name: "Suresh Naidu", avatar: "/uploads/avatars/suresh_naidu_hyderabad_1769952217602.png", gender: "males", city: "Hyderabad" },
     { name: "Shanthi Bhat", avatar: "/uploads/avatars/shanthi_bhat_mysuru.jpg", gender: "females", city: "Mysuru" },
     { name: "Sita Reddy", avatar: "/uploads/avatars/sita_reddy_visakhapatnam.jpg", gender: "females", city: "Visakhapatnam" },
@@ -37,7 +37,7 @@ const stateData: Record<string, any> = {
         traits: ["Heritage expert", "Foodie", "Temple guide"],
         avatars: {
             males: ["/uploads/avatars/tamil_nadu_chennai_male_1_1769952644369.png", "/uploads/avatars/tamil_nadu_madurai_male_1_1769952663711_1769953222631.png"],
-            females: ["/uploads/avatars/tamil_nadu_madurai_female_1_1769952663711.png"]
+            females: ["/uploads/avatars/sneha_iyer_new.png", "/uploads/avatars/tamil_nadu_madurai_female_1_1769952663711.png"]
         }
     },
     "Karnataka": {
@@ -108,10 +108,21 @@ const maleAvatarFallback = [
     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"
 ];
 
+const reviewers = [
+    { name: "Rahul S.", avatar: "https://i.pravatar.cc/150?u=rahul", comment: "Amazing experience! Very knowledgeable about the local temples.", tourType: "Heritage Tour" },
+    { name: "Anjali M.", avatar: "https://i.pravatar.cc/150?u=anjali", comment: "The food tour was the highlight of our trip. Highly recommend!", tourType: "Food Crawl" },
+    { name: "Vikram K.", avatar: "https://i.pravatar.cc/150?u=vikram", comment: "Super friendly and took us to some great hidden gems.", tourType: "City Walk" },
+    { name: "Sneha P.", avatar: "https://i.pravatar.cc/150?u=sneha", comment: "Patient and informative. Made our family trip very special.", tourType: "Sightseeing" },
+    { name: "David W.", avatar: "https://i.pravatar.cc/150?u=david", comment: "Perfect English and great stories. Best guide in India so far!", tourType: "Photography Tour" },
+    { name: "Priya J.", avatar: "https://i.pravatar.cc/150?u=priya", comment: "Very professional and punctual. Great local insights.", tourType: "Market Tour" },
+    { name: "Mark T.", avatar: "https://i.pravatar.cc/150?u=mark", comment: "Loved the backwater tour. The guide knew all the best spots.", tourType: "Nature Walk" },
+    { name: "Reshma B.", avatar: "https://i.pravatar.cc/150?u=reshma", comment: "Fun and energetic! Felt like exploring with a friend.", tourType: "Night Life" }
+];
+
 const seed = async () => {
-    console.log('🚀 Final Seeding: 5 per STATE, Using AI-Generated Stable Avatars...');
+    console.log('🚀 Calibrating Reviews and Seeding Data...');
     try {
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(8);
         const hashedPass = await bcrypt.hash('password123', salt);
 
         console.log('Cleaning existing data...');
@@ -166,7 +177,7 @@ const seed = async () => {
                         location: `${cityName}, ${stateName}`,
                         languages: JSON.stringify(["English", ...data.languages]),
                         rating: Number((4.6 + (Math.random() * 0.4)).toFixed(1)),
-                        review_count: 10 + Math.floor(Math.random() * 50),
+                        review_count: 10 + Math.floor(Math.random() * 6), // Calibrated to 10-15
                         hourly_rate: 400 + Math.floor(Math.random() * 300),
                         specialties: JSON.stringify([trait, "Local History"]),
                         bio: `Namaste! I'm ${g.name}, an expert guide in ${cityName}. I'm passionate about our local culture and specialize in ${trait.toLowerCase()}.`,
@@ -189,6 +200,10 @@ const seed = async () => {
             INSERT INTO guides (id, name, avatar, location, languages, rating, review_count, hourly_rate, specialties, bio, verified, response_time, experience, completed_tours, joined_date, availability, itinerary, hidden_gems) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
+        const insertReviewQuery = `
+            INSERT INTO reviews (id, guide_id, user_name, user_avatar, rating, comment, date, tour_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
 
         for (const g of allGuides) {
             await db.prepare(insertUserQuery).run(
@@ -199,10 +214,22 @@ const seed = async () => {
                 g.bio, g.verified, g.response_time, g.experience, g.completed_tours, g.joined_date,
                 g.availability, JSON.stringify([]), JSON.stringify([])
             );
+
+            // Inject 3-5 mock reviews per guide
+            const numReviews = 3 + Math.floor(Math.random() * 3);
+            const selectedReviewers = [...reviewers].sort(() => 0.5 - Math.random()).slice(0, numReviews);
+
+            for (const [idx, rev] of selectedReviewers.entries()) {
+                const revId = `rev_${g.id}_${idx}`;
+                const date = new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString().split('T')[0];
+                await db.prepare(insertReviewQuery).run(
+                    revId, g.id, rev.name, rev.avatar, 5, rev.comment, date, rev.tourType
+                );
+            }
         }
 
         await db.prepare(insertUserQuery).run('tourist_1', 'Test Tourist', 'tourist@test.com', hashedPass, 'tourist', 'https://github.com/shadcn.png', 'Mumbai', 'Travel Enthusiast', 'Mumbai');
-        console.log(`✅ Success! Seeded Exactly ${allGuides.length} guides with stable AI avatars.`);
+        console.log(`✅ Success! Seeded ${allGuides.length} guides with calibrated review counts and injected mock reviews.`);
     } catch (err) {
         console.error('❌ SEED ERROR:', err);
         process.exit(1);

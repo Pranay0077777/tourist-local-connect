@@ -21,15 +21,26 @@ class DB {
             connectionTimeoutMillis: 15000, // Increased for cloud wake-up
         });
 
-        // Test connection
-        this.pgPool.connect((err, client, release) => {
-            if (err) {
-                console.error('DB: Connection Error:', err.stack);
-            } else {
+        // Test connection with retry logic
+        this.verifyConnection();
+    }
+
+    private async verifyConnection(retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const client = await this.pgPool.connect();
                 console.log('DB: PostgreSQL Connected Successfully');
-                release();
+                client.release();
+                return;
+            } catch (err: any) {
+                console.error(`DB: Connection Attempt ${i + 1} Failed:`, err.message);
+                if (i === retries - 1) {
+                    console.error('DB: Final Connection Failure. Check DATABASE_URL and Internet.');
+                } else {
+                    await new Promise(res => setTimeout(res, 2000)); // Wait before retry
+                }
             }
-        });
+        }
     }
 
     /**

@@ -36,10 +36,15 @@ router.get('/meta', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const { city, minPrice, maxPrice, sort, languages, specialties, query: searchQuery } = req.query;
+        const { city, minPrice, maxPrice, sort, languages, specialties, query: searchQuery, all: showAll } = req.query;
         let query = 'SELECT * FROM guides';
         const conditions: string[] = [];
         const params: any[] = [];
+
+        // By default, only show verified guides unless 'all=true' is passed (e.g. for admin)
+        if (showAll !== 'true') {
+            conditions.push('verified = 1');
+        }
 
         if (city && city !== 'null' && city !== 'undefined' && city !== '') {
             conditions.push('LOWER(location) LIKE LOWER(?)');
@@ -148,6 +153,39 @@ router.get('/:id', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch guide' });
+    }
+});
+
+// Consolidated Dashboard Stats Endpoint for "Infinity" Speed
+router.get('/:id/dashboard-stats', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Single-trip database query for all dashboard needs
+        const [guide, bookings] = await Promise.all([
+            db.queryOne('SELECT rating, review_count FROM guides WHERE id = ?', [id]),
+            db.query('SELECT total_price, status FROM bookings WHERE (guide_id = ? OR guideId = ?)', [id, id])
+        ]);
+
+        if (!guide) {
+            res.status(404).json({ error: 'Guide not found' });
+            return;
+        }
+
+        const completedTours = bookings.filter((b: any) => b.status === 'completed').length;
+        const totalEarnings = bookings
+            .filter((b: any) => b.status === 'completed')
+            .reduce((acc: number, b: any) => acc + (b.total_price || b.price || 0), 0);
+
+        res.json({
+            totalEarnings,
+            completedTours,
+            profileViews: guide.review_count || 0,
+            rating: guide.rating || 0
+        });
+    } catch (error) {
+        console.error("Dashboard stats error:", error);
+        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
     }
 });
 

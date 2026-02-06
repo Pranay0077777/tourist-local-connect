@@ -20,7 +20,32 @@ export function GuideSignUp({ onSuccess, onBack }: GuideSignUpProps) {
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        if (name === 'phone') {
+            const digits = value.replace(/\D/g, '');
+            // Do not allow starting with 0
+            if (digits.startsWith('0')) {
+                toast.error("Phone number cannot start with zero");
+                return;
+            }
+            if (digits.length <= 10) {
+                setFormData(prev => ({ ...prev, phone: digits }));
+            }
+            return;
+        }
+
+        if (name === 'aadharNumber') {
+            const digits = value.replace(/\D/g, '');
+            if (digits.length <= 12) {
+                // Format: XXXX XXXX XXXX
+                const formatted = digits.match(/.{1,4}/g)?.join(' ') || digits;
+                setFormData(prev => ({ ...prev, aadharNumber: formatted }));
+            }
+            return;
+        }
+
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleNext = (e: React.FormEvent) => {
@@ -38,8 +63,8 @@ export function GuideSignUp({ onSuccess, onBack }: GuideSignUpProps) {
             return;
         }
 
-        if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-            toast.error("Please enter a valid 10-digit phone number");
+        if (formData.phone.length !== 10) {
+            toast.error("Please enter an exact 10-digit phone number");
             return;
         }
 
@@ -100,7 +125,10 @@ export function GuideSignUp({ onSuccess, onBack }: GuideSignUpProps) {
 
                         {step === 2 && (
                             <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                                <Input name="aadharNumber" placeholder="Aadhar Number (Verification)" value={formData.aadharNumber} onChange={handleChange} required />
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold text-gray-500 ml-1">Aadhar Card Number (12 Digits)</label>
+                                    <Input name="aadharNumber" placeholder="XXXX XXXX XXXX" value={formData.aadharNumber} onChange={handleChange} required />
+                                </div>
                                 <Input name="hourlyRate" type="number" placeholder="Hourly Rate (₹)" value={formData.hourlyRate} onChange={handleChange} required />
                                 <Input name="languages" placeholder="Languages (e.g. English, Hindi)" value={formData.languages} onChange={handleChange} required />
                                 <Input name="specializations" placeholder="Specialties (e.g. History, Food)" value={formData.specializations} onChange={handleChange} required />

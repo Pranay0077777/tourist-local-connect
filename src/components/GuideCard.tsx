@@ -9,25 +9,18 @@ import { toast } from "sonner";
 interface GuideCardProps {
     guide: Guide;
     user?: LocalUser | null;
+    isFavorite?: boolean;
+    onToggleFavorite?: (guideId: string, newStatus: boolean) => void;
     onViewProfile: (guideId: string) => void;
 }
 
-export function GuideCard({ guide, user, onViewProfile }: GuideCardProps) {
-    const [isFavorite, setIsFavorite] = useState(false);
+export function GuideCard({ guide, user, onViewProfile, isFavorite: initialFavorite, onToggleFavorite }: GuideCardProps) {
+    const [isFavorite, setIsFavorite] = useState(initialFavorite || false);
+    const [imageLoaded, setImageLoaded] = useState(false);
 
     useEffect(() => {
-        const checkFavorite = async () => {
-            if (user) {
-                try {
-                    const favorites = await api.getFavorites(user.id);
-                    setIsFavorite(favorites.includes(guide.id));
-                } catch (err) {
-                    console.error("Failed to fetch favorites", err);
-                }
-            }
-        };
-        checkFavorite();
-    }, [guide.id, user]);
+        setIsFavorite(initialFavorite || false);
+    }, [initialFavorite]);
 
     const toggleFavorite = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -45,6 +38,7 @@ export function GuideCard({ guide, user, onViewProfile }: GuideCardProps) {
                     await api.removeFavorite(user.id, guide.id);
                     toast.success("Removed from favorites");
                 }
+                if (onToggleFavorite) onToggleFavorite(guide.id, newStatus);
             } catch (err) {
                 console.error("Failed to toggle favorite", err);
                 setIsFavorite(!newStatus); // Revert
@@ -64,8 +58,8 @@ export function GuideCard({ guide, user, onViewProfile }: GuideCardProps) {
                 <img
                     src={guide.avatar.includes('w=') ? guide.avatar.replace(/w=\d+/, 'w=400').replace(/h=\d+/, 'h=300') : guide.avatar}
                     alt={guide.name}
-                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
+                    className={`w-full h-full object-cover transform group-hover:scale-105 transition-all duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    onLoad={() => setImageLoaded(true)}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-200" />
 

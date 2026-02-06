@@ -15,9 +15,11 @@ import {
     MessageSquare,
     Calendar,
     Settings,
-    Star
+    Star,
+    ShieldHalf
 } from "lucide-react";
 import { type LocalUser } from "@/lib/localStorage";
+import { isAdmin } from "@/lib/adminUtils";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -52,22 +54,39 @@ export function GuideHomePage({ user, onNavigate, onLogout }: GuideHomePageProps
 
     useEffect(() => {
         const fetchDashboardData = async () => {
+            // For tester profile, initialize with mock data immediately to prevent flashes
+            if (user.email === 'tester@gmail.com') {
+                setStats({
+                    totalEarnings: 85000,
+                    completedTours: 4,
+                    profileViews: 850,
+                    rating: 4.5
+                });
+                // We still fetch requests to see if there are real ones, but we could mock these too
+            }
+
             try {
                 const [statsData, requestsData] = await Promise.all([
                     api.getGuideStats(user.id),
                     api.getBookingRequests(user.id)
                 ]);
-                setStats(statsData);
+
+                // Only set stats if not already mocked or if we want to merge (avoiding flash)
+                if (user.email !== 'tester@gmail.com') {
+                    setStats(statsData);
+                }
                 setRequests(requestsData);
             } catch (error) {
-                toast.error("Failed to load dashboard data");
+                if (user.email !== 'tester@gmail.com') {
+                    toast.error("Failed to load dashboard data");
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         fetchDashboardData();
-    }, [user.id]);
+    }, [user.id, user.email]);
 
     const handleRequestAction = async (requestId: string, action: 'confirmed' | 'cancelled') => {
         try {
@@ -79,16 +98,10 @@ export function GuideHomePage({ user, onNavigate, onLogout }: GuideHomePageProps
         }
     };
 
-    // MOCK DATA FOR DEMO (Only for Guide with ID 1 or ch_1)
-    const DEMO_EMAILS = ['guide@test.com', 'saipranay6733@gmail.com'];
-    const isDemoAccount = DEMO_EMAILS.includes(user.email);
+    // MOCK DATA FOR PRESENTATION (Localized to Tester Profile)
+    const isTesterProfile = user.email === 'tester@gmail.com';
 
-    if (isDemoAccount && stats) {
-        stats.completedTours = 4;
-        stats.profileViews = 850;
-        stats.rating = 4.5;
-        stats.totalEarnings = 85000;
-    }
+    // (Logic moved into useEffect for faster loading/no flash)
 
     const DEMO_REVIEWS = [
         {
@@ -129,9 +142,21 @@ export function GuideHomePage({ user, onNavigate, onLogout }: GuideHomePageProps
             <main className="container mx-auto px-4 py-8 space-y-8">
                 {/* Welcome Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h2>
-                        <p className="text-gray-500 mt-1">Welcome back, {user.name}. Here's what's happening today.</p>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h2>
+                            {isAdmin(user.email) && (
+                                <Button
+                                    size="sm"
+                                    className="bg-purple-600 hover:bg-purple-700 text-white gap-2 shadow-sm animate-pulse-subtle"
+                                    onClick={() => onNavigate('admin')}
+                                >
+                                    <ShieldHalf className="w-4 h-4" />
+                                    Admin Control
+                                </Button>
+                            )}
+                        </div>
+                        <p className="text-gray-500">Welcome back, {user.name}. Here's what's happening today.</p>
                     </div>
                     <div className="flex gap-3">
                         <div className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium shadow-sm text-green-700">
@@ -293,12 +318,9 @@ export function GuideHomePage({ user, onNavigate, onLogout }: GuideHomePageProps
                                 const checks = [
                                     { label: "Basic Info Added", done: !!user.name && !!user.bio },
                                     { label: "Hourly Rate Set", done: (user.hourly_rate || 0) > 0 },
-                                    { label: "Add Profile Photo", done: !!user.avatar && !user.avatar.includes("default") },
-                                    { label: "Identity Verified", done: false } // We need a 'verified' field in LocalUser, using backend data implicitly or assuming mock
+                                    { label: "Add Profile Photo", done: !!user.avatar && !user.avatar?.includes("default") },
+                                    { label: "Identity Verified", done: user.verificationStatus === 'verified' || !!user.aadhar_number }
                                 ];
-                                // Hack: Check if user has 'verified' property or fetch it. For now, assume if ID set?
-                                // Let's use user.aadhar_number as proxy for verification submitted locally
-                                if (user.aadhar_number) checks[3].done = true;
 
                                 const completed = checks.filter(c => c.done).length;
                                 const total = checks.length;
@@ -345,7 +367,7 @@ export function GuideHomePage({ user, onNavigate, onLogout }: GuideHomePageProps
                             </div>
 
                             <div className="space-y-3">
-                                {isDemoAccount && DEMO_REVIEWS.length > 0 ? (
+                                {isTesterProfile && DEMO_REVIEWS.length > 0 ? (
                                     DEMO_REVIEWS.map(review => (
                                         <Card key={review.id} className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
                                             <CardContent className="p-4 space-y-3">

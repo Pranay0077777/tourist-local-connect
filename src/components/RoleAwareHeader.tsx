@@ -19,6 +19,7 @@ import {
 import { type LocalUser, getUnreadCount } from "@/lib/localStorage";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useTheme } from "./theme-provider";
+import { isAdmin } from "@/lib/adminUtils";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 interface RoleAwareHeaderProps {
@@ -128,7 +129,7 @@ export function RoleAwareHeader({ user, currentPage, onNavigate, onLogout }: Rol
 
                     <NotificationsDropdown user={user} onNavigate={onNavigate} />
 
-                    {user.email === 'tourist@test.com' && (
+                    {isAdmin(user.email) && (
                         <NavItem page="admin" icon={ShieldHalf} label="Admin" />
                     )}
                 </nav>

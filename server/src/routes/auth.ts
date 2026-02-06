@@ -42,9 +42,13 @@ router.post('/login', async (req, res) => {
         } else {
             res.status(401).json({ error: 'Invalid credentials' });
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Login error:", error);
-        res.status(500).json({ error: "Internal server error" });
+        if (error.code === 'ENOTFOUND' || error.message.includes('getaddrinfo')) {
+            res.status(503).json({ error: "Database connection issue. Please check your internet or try again in a moment." });
+        } else {
+            res.status(500).json({ error: "Internal server error. Please try again." });
+        }
     }
 });
 
@@ -55,7 +59,7 @@ router.post('/register', async (req, res) => {
         // Run hashing and email check in parallel to save time
         const [existing, hashedPassword] = await Promise.all([
             db.queryOne('SELECT id FROM users WHERE email = ?', [email]),
-            bcrypt.hash(password, 10) // Use 10 rounds for balance between security and speed
+            bcrypt.hash(password, 8) // Reduced to 8 rounds for "instant" feel during presentation
         ]);
 
         if (existing) {
@@ -83,11 +87,11 @@ router.post('/register', async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [id, name, email, hashedPassword, role, avatar, bio, location, safePhone, safeCity, safeAadhar, safeDob, safeLanguages, safeSpecs, safeRate]);
 
+        const langArray = languages ? (typeof languages === 'string' ? languages.split(',').map((l: string) => l.trim()) : languages) : [];
+        const specArray = specializations ? (typeof specializations === 'string' ? specializations.split(',').map((s: string) => s.trim()) : specializations) : [];
+
         // If guide, also insert into guides table for discovery
         if (role === 'guide') {
-            const langArray = languages ? (typeof languages === 'string' ? languages.split(',').map((l: string) => l.trim()) : languages) : [];
-            const specArray = specializations ? (typeof specializations === 'string' ? specializations.split(',').map((s: string) => s.trim()) : specializations) : [];
-
             await db.exec(`
                 INSERT INTO guides (id, name, avatar, location, languages, rating, review_count, hourly_rate, specialties, bio, dob, verified, response_time, experience, completed_tours, joined_date, availability, itinerary, hidden_gems) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -112,10 +116,33 @@ router.post('/register', async (req, res) => {
             { expiresIn: '24h' }
         );
 
-        res.json({ success: true, token, user: { id, name, email, role } });
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: `Registration failed: ${(e as Error).message}` });
+        res.json({
+            success: true,
+            token,
+            user: {
+                id,
+                name,
+                email,
+                role,
+                phone: safePhone,
+                city: safeCity,
+                aadhar_number: safeAadhar,
+                hourly_rate: safeRate,
+                specialties: specArray,
+                languages: langArray,
+                dob: safeDob,
+                avatar,
+                bio,
+                joinDate: new Date().toISOString()
+            }
+        });
+    } catch (e: any) {
+        console.error("Registration error:", e);
+        if (e.code === 'ENOTFOUND' || e.message.includes('getaddrinfo')) {
+            res.status(503).json({ error: "Database connection issue. Please check your internet or try again." });
+        } else {
+            res.status(500).json({ error: `Registration failed: ${e.message}` });
+        }
     }
 });
 

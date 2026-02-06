@@ -49,7 +49,11 @@ function AppContent() {
     const handleSessionUpdate = () => {
       const user = getCurrentUser();
       setCurrentAppStateUser(user);
-      if (!user) navigate('/welcome');
+      // If user just logged in and we are on an auth page, the PublicRoute will handle the redirect.
+      // If user just logged out and is not on an auth page, go to welcome.
+      if (!user && !['/welcome', '/login/guide', '/login/tourist', '/signup/guide', '/signup/tourist'].includes(window.location.pathname)) {
+        navigate('/welcome');
+      }
     };
 
     window.addEventListener('user-session-updated', handleSessionUpdate);
@@ -59,7 +63,7 @@ function AppContent() {
   const handleLogout = () => {
     localStorage.removeItem('tlc_current_user');
     setCurrentAppStateUser(null);
-    navigate('/welcome');
+    navigate('/welcome', { replace: true });
   };
 
   const handleNavigate = (page: string, params?: any) => {
@@ -93,15 +97,20 @@ function AppContent() {
     return <div className="animate-fade-in w-full min-h-screen">{children}</div>;
   };
 
+  const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+    if (currentUser) return <Navigate to="/" replace />;
+    return <>{children}</>;
+  };
+
   return (
     <>
       <Routes>
         {/* Public Routes */}
-        <Route path="/welcome" element={<WelcomeScreen onRoleSelect={(role) => navigate(role === 'guide' ? '/login/guide' : '/login/tourist')} />} />
-        <Route path="/login/guide" element={<SignIn role="guide" onSuccess={() => navigate('/')} onBack={() => navigate('/welcome')} onSwitchToSignUp={() => navigate('/signup/guide')} />} />
-        <Route path="/login/tourist" element={<SignIn role="tourist" onSuccess={() => navigate('/')} onBack={() => navigate('/welcome')} onSwitchToSignUp={() => navigate('/signup/tourist')} />} />
-        <Route path="/signup/guide" element={<GuideSignUp onSuccess={() => navigate('/')} onBack={() => navigate('/login/guide')} />} />
-        <Route path="/signup/tourist" element={<TouristSignUp onSuccess={() => navigate('/')} onBack={() => navigate('/login/tourist')} />} />
+        <Route path="/welcome" element={<PublicRoute><WelcomeScreen onRoleSelect={(role) => navigate(role === 'guide' ? '/login/guide' : '/login/tourist')} /></PublicRoute>} />
+        <Route path="/login/guide" element={<PublicRoute><SignIn role="guide" onSuccess={() => navigate('/')} onBack={() => navigate('/welcome')} onSwitchToSignUp={() => navigate('/signup/guide')} /></PublicRoute>} />
+        <Route path="/login/tourist" element={<PublicRoute><SignIn role="tourist" onSuccess={() => navigate('/')} onBack={() => navigate('/welcome')} onSwitchToSignUp={() => navigate('/signup/tourist')} /></PublicRoute>} />
+        <Route path="/signup/guide" element={<PublicRoute><GuideSignUp onSuccess={() => navigate('/')} onBack={() => navigate('/login/guide')} /></PublicRoute>} />
+        <Route path="/signup/tourist" element={<PublicRoute><TouristSignUp onSuccess={() => navigate('/')} onBack={() => navigate('/login/tourist')} /></PublicRoute>} />
 
         {/* Home Route (Dynamic based on role) */}
         <Route path="/" element={

@@ -88,8 +88,13 @@ const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
 // Basic Health Check
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date() });
+app.get('/api/health', async (req, res) => {
+    try {
+        await db.queryOne('SELECT 1');
+        res.json({ status: 'ok', database: 'connected', timestamp: new Date() });
+    } catch (e) {
+        res.status(503).json({ status: 'error', database: 'disconnected', timestamp: new Date() });
+    }
 });
 
 // AI Translation Helper
