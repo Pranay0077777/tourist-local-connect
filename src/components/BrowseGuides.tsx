@@ -146,7 +146,7 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
                                     className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                                 >
                                     <img
-                                        src={cityImages[city] || `/uploads/cities/generic.png`}
+                                        src={api.getAssetUrl(cityImages[city] || `/uploads/cities/generic.png`)}
                                         alt={city}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                     />

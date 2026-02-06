@@ -182,7 +182,7 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                         <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-md mb-4 overflow-hidden flex items-center justify-center">
                             {formData.avatar ? (
                                 <img
-                                    src={formData.avatar.startsWith('http') ? formData.avatar : `http://localhost:3001${formData.avatar}`}
+                                    src={api.getAssetUrl(formData.avatar)}
                                     alt="Profile"
                                     className="w-full h-full object-cover"
                                 />

@@ -56,7 +56,7 @@ export function GuideCard({ guide, user, onViewProfile, isFavorite: initialFavor
         >
             <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                 <img
-                    src={guide.avatar.includes('w=') ? guide.avatar.replace(/w=\d+/, 'w=400').replace(/h=\d+/, 'h=300') : guide.avatar}
+                    src={api.getAssetUrl(guide.avatar.includes('w=') ? guide.avatar.replace(/w=\d+/, 'w=400').replace(/h=\d+/, 'h=300') : guide.avatar)}
                     alt={guide.name}
                     className={`w-full h-full object-cover transform group-hover:scale-105 transition-all duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}

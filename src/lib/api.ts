@@ -26,6 +26,24 @@ const STATS_CACHE_TTL = 30000; // 30 seconds
 
 export const api = {
     /**
+     * Helper to resolve asset URLs.
+     * Some assets are static (served by frontend/Vercel)
+     * Some are dynamic uploads (served by backend/Render)
+     */
+    getAssetUrl: (path: string) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+
+        // Static assets moved to public/uploads/cities are served from the frontend root in production
+        if (path.includes('/uploads/cities/')) {
+            return path; // Vite serves public folder at root /
+        }
+
+        // Dynamic content from backend
+        return `${API_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    },
+
+    /**
      * Get security headers with JWT token
      */
     getHeaders: () => {

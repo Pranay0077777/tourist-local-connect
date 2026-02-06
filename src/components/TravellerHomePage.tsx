@@ -182,7 +182,7 @@ export function TravellerHomePage({ user, onNavigate, onLogout }: TravellerHomeP
                                 >
                                     {/* Background Image */}
                                     <img
-                                        src={city.image}
+                                        src={api.getAssetUrl(city.image)}
                                         alt={city.name}
                                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                     />

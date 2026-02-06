@@ -236,7 +236,7 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                     <div className="flex gap-4">
                         <img
-                            src={user.avatar?.startsWith('http') ? user.avatar : `http://localhost:3001${user.avatar}`}
+                            src={api.getAssetUrl(user.avatar || "")}
                             alt={user.name}
                             className="w-10 h-10 rounded-full object-cover"
                             onError={(e) => e.currentTarget.src = "https://github.com/shadcn.png"}
@@ -368,7 +368,7 @@ function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { p
             {/* Header */}
             <div className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <img src={post.user_avatar} alt={post.user_name} className="w-10 h-10 rounded-full object-cover" />
+                    <img src={api.getAssetUrl(post.user_avatar)} alt={post.user_name} className="w-10 h-10 rounded-full object-cover" />
                     <div>
                         <h3 className="font-semibold text-gray-900">{post.user_name}</h3>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
@@ -384,7 +384,7 @@ function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { p
             </div>
             {post.image && (
                 <div className="w-full h-80 bg-gray-100 mt-2">
-                    <img src={post.image} alt="Post content" className="w-full h-full object-cover" />
+                    <img src={api.getAssetUrl(post.image)} alt="Post content" className="w-full h-full object-cover" />
                 </div>
             )}
 
