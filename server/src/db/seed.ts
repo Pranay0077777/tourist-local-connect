@@ -119,22 +119,22 @@ const reviewers = [
     { name: "Reshma B.", avatar: "https://i.pravatar.cc/150?u=reshma", comment: "Fun and energetic! Felt like exploring with a friend.", tourType: "Night Life" }
 ];
 
-const seed = async () => {
+export const seedData = async () => {
     console.log('🚀 Calibrating Reviews and Seeding Data...');
     try {
         const salt = await bcrypt.genSalt(8);
         const hashedPass = await bcrypt.hash('password123', salt);
 
         console.log('Cleaning existing data...');
-        await db.prepare('DELETE FROM messages').run();
-        await db.prepare('DELETE FROM bookings').run();
-        await db.prepare('DELETE FROM reviews').run();
-        await db.prepare('DELETE FROM favorites').run();
-        await db.prepare('DELETE FROM guide_availability_slots').run();
-        await db.prepare('DELETE FROM posts').run();
-        await db.prepare('DELETE FROM saved_itineraries').run();
-        await db.prepare('DELETE FROM guides').run();
-        await db.prepare('DELETE FROM users').run();
+        await db.exec('DELETE FROM messages');
+        await db.exec('DELETE FROM bookings');
+        await db.exec('DELETE FROM reviews');
+        await db.exec('DELETE FROM favorites');
+        await db.exec('DELETE FROM guide_availability_slots');
+        await db.exec('DELETE FROM posts');
+        await db.exec('DELETE FROM saved_itineraries');
+        await db.exec('DELETE FROM guides');
+        await db.exec('DELETE FROM users');
 
         const allGuides: any[] = [];
         let guideIdCounter = 1;
@@ -177,7 +177,7 @@ const seed = async () => {
                         location: `${cityName}, ${stateName}`,
                         languages: JSON.stringify(["English", ...data.languages]),
                         rating: Number((4.6 + (Math.random() * 0.4)).toFixed(1)),
-                        review_count: 10 + Math.floor(Math.random() * 6), // Calibrated to 10-15
+                        review_count: 10 + Math.floor(Math.random() * 6),
                         hourly_rate: 400 + Math.floor(Math.random() * 300),
                         specialties: JSON.stringify([trait, "Local History"]),
                         bio: `Namaste! I'm ${g.name}, an expert guide in ${cityName}. I'm passionate about our local culture and specialize in ${trait.toLowerCase()}.`,
@@ -206,34 +206,36 @@ const seed = async () => {
         `;
 
         for (const g of allGuides) {
-            await db.prepare(insertUserQuery).run(
+            await db.exec(insertUserQuery, [
                 g.id, g.name, `${g.id}@guide.com`, hashedPass, 'guide', g.avatar, g.location, g.bio, g.location.split(',')[0].trim()
-            );
-            await db.prepare(insertGuideQuery).run(
+            ]);
+            await db.exec(insertGuideQuery, [
                 g.id, g.name, g.avatar, g.location, g.languages, g.rating, g.review_count, g.hourly_rate, g.specialties,
                 g.bio, g.verified, g.response_time, g.experience, g.completed_tours, g.joined_date,
                 g.availability, JSON.stringify([]), JSON.stringify([])
-            );
+            ]);
 
-            // Inject 3-5 mock reviews per guide
             const numReviews = 3 + Math.floor(Math.random() * 3);
             const selectedReviewers = [...reviewers].sort(() => 0.5 - Math.random()).slice(0, numReviews);
 
             for (const [idx, rev] of selectedReviewers.entries()) {
                 const revId = `rev_${g.id}_${idx}`;
                 const date = new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString().split('T')[0];
-                await db.prepare(insertReviewQuery).run(
+                await db.exec(insertReviewQuery, [
                     revId, g.id, rev.name, rev.avatar, 5, rev.comment, date, rev.tourType
-                );
+                ]);
             }
         }
 
-        await db.prepare(insertUserQuery).run('tourist_1', 'Test Tourist', 'tourist@test.com', hashedPass, 'tourist', 'https://github.com/shadcn.png', 'Mumbai', 'Travel Enthusiast', 'Mumbai');
-        console.log(`✅ Success! Seeded ${allGuides.length} guides with calibrated review counts and injected mock reviews.`);
+        await db.exec(insertUserQuery, ['tourist_1', 'Test Tourist', 'tourist@test.com', hashedPass, 'tourist', 'https://github.com/shadcn.png', 'Mumbai', 'Travel Enthusiast', 'Mumbai']);
+        console.log(`✅ Success! Seeded ${allGuides.length} guides.`);
+        return { success: true, count: allGuides.length };
     } catch (err) {
         console.error('❌ SEED ERROR:', err);
-        process.exit(1);
+        throw err;
     }
 };
 
-seed();
+if (require.main === module) {
+    seedData().catch(() => process.exit(1));
+}
