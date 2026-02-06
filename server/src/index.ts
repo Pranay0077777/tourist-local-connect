@@ -215,11 +215,9 @@ app.use((err: any, req: any, res: any, next: any) => {
 });
 
 // Start Server
-if (process.env.NODE_ENV !== 'production') {
-    httpServer.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-        console.log('Socket.io initialized');
-    });
-}
+httpServer.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log('Socket.io initialized');
+});
 
 export default app;
