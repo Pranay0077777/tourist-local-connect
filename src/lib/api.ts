@@ -516,5 +516,15 @@ export const api = {
             throw new Error(error.error || 'Failed to generate itinerary');
         }
         return res.json();
+    },
+
+    initializeDatabase: async () => {
+        const res = await fetch(`${API_URL}/api/admin/seed`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ secret: 'infinity_deploy_2026' })
+        });
+        if (!res.ok) throw new Error('Failed to initialize database');
+        return res.json();
     }
 };
