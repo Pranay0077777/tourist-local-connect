@@ -251,6 +251,24 @@ export function WelcomeScreen({ onRoleSelect }: WelcomeScreenProps) {
                                 </div>
                             </div>
 
+                            <div className="mt-8 pt-4 border-t border-gray-100 flex justify-center">
+                                <button
+                                    onClick={async () => {
+                                        if (confirm("This will initialize/reset the production database. Continue?")) {
+                                            try {
+                                                const { api } = await import("@/lib/api");
+                                                await api.initializeDatabase();
+                                                alert("Database setup successfully! 🚀");
+                                            } catch (e) {
+                                                alert("Setup failed. Check if deployment is complete.");
+                                            }
+                                        }
+                                    }}
+                                    className="text-[10px] text-gray-300 hover:text-gray-500 transition-colors"
+                                >
+                                    Setup Production Database (Admin)
+                                </button>
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}
