@@ -17,6 +17,7 @@ const getRawApiUrl = () => {
 };
 
 const API_URL = getRawApiUrl();
+console.log("API: Resolved Base URL:", API_URL);
 
 // In-memory cache for metadata to prevent redundant network trips
 let metadataCache: { cities: string[], languages: string[], specialties: string[] } | null = null;
@@ -56,7 +57,7 @@ export const api = {
                 token = userData.token;
             }
         } catch (e) {
-            // Silently fail, getHeaders will warn if token missing
+            console.error("API: Failed to parse current user for headers", e);
         }
 
         const headers: Record<string, string> = {
@@ -65,6 +66,8 @@ export const api = {
 
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
+        } else {
+            console.warn("API: No auth token found in localStorage");
         }
 
         return headers;

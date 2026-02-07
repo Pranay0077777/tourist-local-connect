@@ -19,8 +19,9 @@ import itineraryRoutes from './routes/itineraries';
 import weatherRoutes from './routes/weather';
 import communityRoutes from './routes/community';
 import { translateWithAI, generateAIResponse } from './services/aiService';
+import { schemaSql } from './db/schema';
+import { seedData } from './db/seed';
 import dotenv from 'dotenv';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 dotenv.config();
@@ -92,12 +93,26 @@ app.post('/api/admin/seed', async (req: any, res) => {
 
     try {
         console.log("CloudSeed: Starting database initialization...");
-        const seedPath = path.join(__dirname, './db/seed');
-        // We dynamically import to avoid bundling it in normal starts if possible, 
-        // but for now, we'll just run the logic directly or call the seed script.
-        const { seedData } = require('./db/seed');
+
+        // 1. Run Schema
+        try {
+            console.log("CloudSeed: Applying schema from schema.ts...");
+            const statements = schemaSql
+                .split(';')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+
+            for (const sql of statements) {
+                await db.exec(sql);
+            }
+            console.log("CloudSeed: Schema applied successfully.");
+        } catch (schemaErr: any) {
+            console.warn("CloudSeed: Schema application warning (might already exist):", schemaErr.message);
+        }
+
+        // 2. Run Seed Logic
         await seedData();
-        res.json({ success: true, message: "Production database seeded successfully! 🚀" });
+        res.json({ success: true, message: "Production database initialized and seeded successfully! 🚀" });
     } catch (e: any) {
         console.error("CloudSeed Error:", e);
         res.status(500).json({ error: e.message });

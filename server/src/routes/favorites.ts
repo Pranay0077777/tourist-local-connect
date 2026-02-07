@@ -36,8 +36,13 @@ router.post('/', async (req, res) => {
 
         res.json({ success: true, id });
     } catch (error: any) {
-        console.error('Error adding favorite:', error);
-        res.status(500).json({ error: 'Failed to add favorite' });
+        console.error('Error adding favorite:', {
+            error: error.message,
+            stack: error.stack,
+            userId: req.body.userId,
+            guideId: req.body.guideId
+        });
+        res.status(500).json({ error: 'Failed to add favorite', details: error.message });
     }
 });
 
