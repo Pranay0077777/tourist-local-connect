@@ -48,27 +48,10 @@ export function RoleSelection({ onSelectRole, onBack }: RoleSelectionProps) {
                     </Card>
                 </div>
 
-                <div className="text-center flex flex-col items-center gap-4">
+                <div className="text-center">
                     <Button variant="ghost" onClick={onBack}>
                         Back
                     </Button>
-
-                    <button
-                        onClick={async () => {
-                            if (confirm("This will initialize/reset the production database. Continue?")) {
-                                try {
-                                    const { api } = await import("@/lib/api");
-                                    await api.initializeDatabase();
-                                    alert("Database setup successfully! 🚀");
-                                } catch (e) {
-                                    alert("Setup failed. Check if deployment is complete.");
-                                }
-                            }
-                        }}
-                        className="text-[10px] text-gray-300 hover:text-gray-500 transition-colors"
-                    >
-                        Setup Production Database (Admin)
-                    </button>
                 </div>
             </div>
         </div>

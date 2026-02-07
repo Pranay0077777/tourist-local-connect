@@ -67,7 +67,6 @@ const STEPS = [
 export function WelcomeScreen({ onRoleSelect }: WelcomeScreenProps) {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showRoleSelection, setShowRoleSelection] = useState(false);
-    const [settingUp, setSettingUp] = useState(false);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -252,31 +251,6 @@ export function WelcomeScreen({ onRoleSelect }: WelcomeScreenProps) {
                                 </div>
                             </div>
 
-                            <div className="mt-8 pt-4 border-t border-gray-100 flex flex-col items-center gap-2">
-                                <button
-                                    disabled={settingUp}
-                                    onClick={async () => {
-                                        if (confirm("This will initialize/reset the production database. Continue?")) {
-                                            try {
-                                                setSettingUp(true);
-                                                const { api } = await import("@/lib/api");
-                                                await api.initializeDatabase();
-                                                alert("Database setup successfully! 🚀");
-                                            } catch (e: any) {
-                                                alert(e.message || "Setup failed. Check if deployment is complete.");
-                                            } finally {
-                                                setSettingUp(false);
-                                            }
-                                        }
-                                    }}
-                                    className={`text-[10px] transition-colors ${settingUp ? 'text-blue-500 animate-pulse' : 'text-gray-400 hover:text-gray-600'}`}
-                                >
-                                    {settingUp ? "⚙️ Initializing Database (Please wait...)" : "Setup Production Database (Admin)"}
-                                </button>
-                                {settingUp && (
-                                    <p className="text-[9px] text-gray-400 italic">This usually takes 10-15 seconds...</p>
-                                )}
-                            </div>
                         </motion.div>
                     </motion.div>
                 )}

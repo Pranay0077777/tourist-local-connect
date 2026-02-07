@@ -120,12 +120,19 @@ const reviewers = [
 ];
 
 export const seedData = async () => {
-    console.log('🚀 Calibrating Reviews and Seeding Data...');
+    console.log('🚀 Restoring High-Quality Professional Seeding...');
     try {
         const salt = await bcrypt.genSalt(8);
         const hashedPass = await bcrypt.hash('password123', salt);
 
-        console.log('Cleaning existing data...');
+        // Check if guides already exist to avoid accidental wipes
+        const existingGuides = await db.queryOne('SELECT COUNT(*) as count FROM guides');
+        if (existingGuides && Number(existingGuides.count) > 0) {
+            console.log('✅ Guides already exist. Skipping seed to protect data.');
+            return { success: true, count: Number(existingGuides.count) };
+        }
+
+        console.log('Cleaning existing sample data...');
         await db.exec('DELETE FROM messages');
         await db.exec('DELETE FROM bookings');
         await db.exec('DELETE FROM reviews');
@@ -136,64 +143,19 @@ export const seedData = async () => {
         await db.exec('DELETE FROM guides');
         await db.exec('DELETE FROM users');
 
-        const allGuides: any[] = [];
-        let guideIdCounter = 1;
-
-        for (const [stateName, data] of Object.entries(stateData)) {
-            console.log(`Processing state: ${stateName}`);
-            let femaleInState = 0;
-            let guidesAddedInState = 0;
-
-            for (const [cityIdx, cityName] of data.cities.entries()) {
-                let cityQuota = data.cities.length === 1 ? 5 : (cityIdx === 0 ? 3 : 2);
-                const cityManual = manualGuides.filter(g => g.city === cityName);
-                const cityGuides: any[] = [...cityManual];
-
-                while (cityGuides.length < cityQuota) {
-                    const needsFemale = femaleInState < 2 && (5 - guidesAddedInState) <= (2 - femaleInState);
-                    const isFemale = needsFemale || (femaleInState < 3 && Math.random() > 0.5);
-                    const gender = isFemale ? "females" : "males";
-
-                    const name = data.names[gender][Math.floor(Math.random() * data.names[gender].length)] + " " + data.lastNames[Math.floor(Math.random() * data.lastNames.length)];
-
-                    let avatar = "";
-                    if (data.avatars[gender] && data.avatars[gender].length > 0) {
-                        avatar = data.avatars[gender].shift();
-                    } else {
-                        const pool = isFemale ? femaleAvatarFallback : maleAvatarFallback;
-                        avatar = pool[Math.floor(Math.random() * pool.length)];
-                    }
-
-                    cityGuides.push({ name, avatar, gender });
-                    if (isFemale) femaleInState++;
-                }
-
-                cityGuides.forEach(g => {
-                    const trait = data.traits[Math.floor(Math.random() * data.traits.length)];
-                    allGuides.push({
-                        id: `guide_${guideIdCounter++}`,
-                        name: g.name,
-                        avatar: g.avatar,
-                        location: `${cityName}, ${stateName}`,
-                        languages: JSON.stringify(["English", ...data.languages]),
-                        rating: Number((4.6 + (Math.random() * 0.4)).toFixed(1)),
-                        review_count: 10 + Math.floor(Math.random() * 6),
-                        hourly_rate: 400 + Math.floor(Math.random() * 300),
-                        specialties: JSON.stringify([trait, "Local History"]),
-                        bio: `Namaste! I'm ${g.name}, an expert guide in ${cityName}. I'm passionate about our local culture and specialize in ${trait.toLowerCase()}.`,
-                        verified: 1,
-                        response_time: "within 1 hour",
-                        experience: `${3 + Math.floor(Math.random() * 10)} years`,
-                        completed_tours: 50 + Math.floor(Math.random() * 150),
-                        joined_date: "2020-01-01",
-                        availability: JSON.stringify(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
-                    });
-                    guidesAddedInState++;
-                });
-            }
-        }
-
-        console.log(`Inserting ${allGuides.length} guides...`);
+        // Professional Guide List
+        const stableGuides = [
+            { id: "g_1", name: "Priya Raman", avatar: "/uploads/avatars/tamil_nadu_chennai_female_2_priya_1769952720538.png", city: "Chennai", state: "Tamil Nadu", bio: "History buff and heritage expert in Chennai." },
+            { id: "g_2", name: "Rajesh Kumar", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887", city: "Chennai", state: "Tamil Nadu", bio: "Expert in temple architecture and hidden food spots." },
+            { id: "g_3", name: "Amrutha Menon", avatar: "/uploads/avatars/amrutha_menon_kochi.jpg", city: "Kochi", state: "Kerala", bio: "Kochi local with deep knowledge of colonial history." },
+            { id: "g_4", name: "Vikram Reddy", avatar: "/uploads/avatars/vikram_reddy_bengaluru_1769952126568.png", city: "Bengaluru", state: "Karnataka", bio: "Tech-savvy guide exploring Bengaluru's royal history." },
+            { id: "g_5", name: "Priya Menon", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1888", city: "Kochi", state: "Kerala", bio: "Art and culture specialist in Fort Kochi." },
+            { id: "g_6", name: "Anjali Menon", avatar: "https://images.unsplash.com/photo-1693649977898-19984f0d231f?w=400&h=400", city: "Thiruvananthapuram", state: "Kerala", bio: "Wellness tourism specialist & certified tour guide." },
+            { id: "g_7", name: "Rajesh Murthy", avatar: "/uploads/avatars/telangana_hyderabad_male_rajesh_1769953179628.png", city: "Hyderabad", state: "Telangana", bio: "Hyderabad local passionate about forts and food." },
+            { id: "g_8", name: "Meera Reddy", avatar: "/uploads/avatars/telangana_hyderabad_female_meera_reddy_1769952217602_1769953199300.png", city: "Hyderabad", state: "Telangana", bio: "Dedicated to showing the authentic side of Hyderabad." },
+            { id: "g_9", name: "Karthik Menon", avatar: "/uploads/avatars/karthik_menon_new.png", city: "Kochi", state: "Kerala", bio: "Houseboat and backwater expert." },
+            { id: "g_10", name: "Shanthi Bhat", avatar: "/uploads/avatars/shanthi_bhat_mysuru.jpg", city: "Mysuru", state: "Karnataka", bio: "Royal historian and nature lover in Mysuru." }
+        ];
 
         const insertUserQuery = 'INSERT INTO users (id, name, email, password, role, avatar, location, bio, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
         const insertGuideQuery = `
@@ -205,31 +167,37 @@ export const seedData = async () => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        for (const g of allGuides) {
+        for (const g of stableGuides) {
+            const loc = `${g.city}, ${g.state}`;
             await db.exec(insertUserQuery, [
-                g.id, g.name, `${g.id}@guide.com`, hashedPass, 'guide', g.avatar, g.location, g.bio, g.location.split(',')[0].trim()
+                g.id, g.name, `${g.id}@guide.com`, hashedPass, 'guide', g.avatar, loc, g.bio, g.city
             ]);
+
             await db.exec(insertGuideQuery, [
-                g.id, g.name, g.avatar, g.location, g.languages, g.rating, g.review_count, g.hourly_rate, g.specialties,
-                g.bio, g.verified, g.response_time, g.experience, g.completed_tours, g.joined_date,
-                g.availability, JSON.stringify([]), JSON.stringify([])
+                g.id, g.name, g.avatar, loc,
+                JSON.stringify(["English", g.state === "Tamil Nadu" ? "Tamil" : g.state === "Kerala" ? "Malayalam" : "Hindi"]),
+                4.8, 120, 500,
+                JSON.stringify(["Local History", "Culture"]),
+                g.bio, 1, "within 1 hour", "5 years", 150, "2023-01-01",
+                JSON.stringify(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]),
+                JSON.stringify([]), JSON.stringify([])
             ]);
 
-            const numReviews = 3 + Math.floor(Math.random() * 3);
-            const selectedReviewers = [...reviewers].sort(() => 0.5 - Math.random()).slice(0, numReviews);
-
-            for (const [idx, rev] of selectedReviewers.entries()) {
-                const revId = `rev_${g.id}_${idx}`;
-                const date = new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString().split('T')[0];
+            // Add sample reviews
+            for (let i = 0; i < 2; i++) {
+                const revId = `rev_${g.id}_${i}`;
+                const reviewer = reviewers[Math.floor(Math.random() * reviewers.length)];
                 await db.exec(insertReviewQuery, [
-                    revId, g.id, rev.name, rev.avatar, 5, rev.comment, date, rev.tourType
+                    revId, g.id, reviewer.name, reviewer.avatar, 5, reviewer.comment, "2024-02-01", reviewer.tourType
                 ]);
             }
         }
 
+        // Test User
         await db.exec(insertUserQuery, ['tourist_1', 'Test Tourist', 'tourist@test.com', hashedPass, 'tourist', 'https://github.com/shadcn.png', 'Mumbai', 'Travel Enthusiast', 'Mumbai']);
-        console.log(`✅ Success! Seeded ${allGuides.length} guides.`);
-        return { success: true, count: allGuides.length };
+
+        console.log(`✅ Success! Restored ${stableGuides.length} professional guides.`);
+        return { success: true, count: stableGuides.length };
     } catch (err) {
         console.error('❌ SEED ERROR:', err);
         throw err;

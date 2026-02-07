@@ -86,45 +86,61 @@ app.use('/api/community', communityRoutes);
 
 let isSeeding = false;
 
-// Emergency Cloud Seed (Admin Only)
-app.post('/api/admin/seed', async (req: any, res) => {
+// Automated Initialization System
+async function initializeSystem() {
+    try {
+        console.log("System: Starting automated health check...");
+
+        // 1. Ensure Schema is current
+        const statements = schemaSql
+            .split(';')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+
+        for (const sql of statements) {
+            try {
+                await db.exec(sql);
+            } catch (e: any) {
+                // Ignore "already exists" errors
+                if (!e.message.includes("already exists")) {
+                    console.warn(`Schema Warning on [${sql.substring(0, 30)}...]:`, e.message);
+                }
+            }
+        }
+        console.log("System: Schema verified/applied.");
+
+        // 2. Conditional Seeding (Only if empty)
+        await seedData();
+        console.log("System: Initialization complete. 🚀");
+    } catch (err) {
+        console.error("System Initialization Failed:", err);
+    }
+}
+
+// Start Server & Initialize
+httpServer.listen(PORT, async () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log('Socket.io initialized');
+    await initializeSystem();
+});
+
+// Admin Route (Safe version)
+app.post('/api/admin/reset-data', async (req: any, res) => {
     const { secret } = req.body;
     if (secret !== process.env.JWT_SECRET && secret !== 'infinity_deploy_2026') {
         return res.status(403).json({ error: "Unauthorized" });
     }
 
-    if (isSeeding) {
-        return res.status(429).json({ error: "Seeding is already in progress. Please wait." });
-    }
-
     try {
-        isSeeding = true;
-        console.log("CloudSeed: Starting database initialization...");
-
-        // 1. Run Schema
-        try {
-            console.log("CloudSeed: Applying schema from schema.ts...");
-            const statements = schemaSql
-                .split(';')
-                .map(s => s.trim())
-                .filter(s => s.length > 0);
-
-            for (const sql of statements) {
-                await db.exec(sql);
-            }
-            console.log("CloudSeed: Schema applied successfully.");
-        } catch (schemaErr: any) {
-            console.warn("CloudSeed: Schema application warning (might already exist):", schemaErr.message);
-        }
-
-        // 2. Run Seed Logic
+        console.log("Admin: Forced data reset requested...");
+        // This version clears everything and re-seeds
+        await db.exec('DELETE FROM users');
+        await db.exec('DELETE FROM guides');
+        await db.exec('DELETE FROM reviews');
         await seedData();
-        res.json({ success: true, message: "Production database initialized and seeded successfully! 🚀" });
+        res.json({ success: true, message: "Database reset to professional state! 🚀" });
     } catch (e: any) {
-        console.error("CloudSeed Error:", e);
         res.status(500).json({ error: e.message });
-    } finally {
-        isSeeding = false;
     }
 });
 
@@ -257,12 +273,6 @@ app.use((err: any, req: any, res: any, next: any) => {
         error: err.message || "Internal Server Error",
         details: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
-});
-
-// Start Server
-httpServer.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log('Socket.io initialized');
 });
 
 export default app;
