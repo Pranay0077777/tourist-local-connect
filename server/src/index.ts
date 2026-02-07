@@ -84,6 +84,8 @@ app.use('/api/itineraries', authenticateToken, itineraryRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/community', communityRoutes);
 
+let isSeeding = false;
+
 // Emergency Cloud Seed (Admin Only)
 app.post('/api/admin/seed', async (req: any, res) => {
     const { secret } = req.body;
@@ -91,7 +93,12 @@ app.post('/api/admin/seed', async (req: any, res) => {
         return res.status(403).json({ error: "Unauthorized" });
     }
 
+    if (isSeeding) {
+        return res.status(429).json({ error: "Seeding is already in progress. Please wait." });
+    }
+
     try {
+        isSeeding = true;
         console.log("CloudSeed: Starting database initialization...");
 
         // 1. Run Schema
@@ -116,6 +123,8 @@ app.post('/api/admin/seed', async (req: any, res) => {
     } catch (e: any) {
         console.error("CloudSeed Error:", e);
         res.status(500).json({ error: e.message });
+    } finally {
+        isSeeding = false;
     }
 });
 
