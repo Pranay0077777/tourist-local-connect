@@ -21,6 +21,7 @@ import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useTheme } from "./theme-provider";
 import { isAdmin } from "@/lib/adminUtils";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { api } from "@/lib/api";
 
 interface RoleAwareHeaderProps {
     user: LocalUser;
@@ -148,7 +149,7 @@ export function RoleAwareHeader({ user, currentPage, onNavigate, onLogout }: Rol
                         <div className={`h-10 w-10 rounded-full flex-shrink-0 flex items-center justify-center border-2 border-primary/20 bg-primary/5 relative`}>
                             {user.avatar ? (
                                 <img
-                                    src={`${user.avatar.startsWith('http') ? user.avatar : `http://localhost:3001${user.avatar}`}?t=${Date.now()}`}
+                                    src={api.getAssetUrl(user.avatar)}
                                     alt={user.name}
                                     className="h-full w-full rounded-full object-cover"
                                     onError={(e) => {
