@@ -307,17 +307,19 @@ router.post('/plan-trip', async (req, res) => {
 
         const aiItinerary = await planTripWithAI(city, days || 1, interests || []);
 
-        if (aiItinerary) {
+        if (aiItinerary && aiItinerary.length > 50) { // Basic sanity check on AI response
             itineraryText = aiItinerary;
             const { stops } = getItineraryTemplate(city, days || 1, interests || []);
             finalStops = stops;
         } else {
+            console.log(`Planner: AI service unavailable or returned short response for ${city}. Using high-quality locally curated template.`);
             const { text, stops } = getItineraryTemplate(city, days || 1, interests || []);
             itineraryText = text;
             finalStops = stops;
         }
 
-        const allGuides = await db.query(`SELECT * FROM guides WHERE LOWER(location) LIKE LOWER(?)`, [`%${city}%`]);
+        // Improved Guide Matching: More lenient location search
+        const allGuides = await db.query(`SELECT * FROM guides WHERE location ILIKE ?`, [`%${city}%`]);
 
         const scoredGuides = allGuides.map(guide => {
             let score = 0;

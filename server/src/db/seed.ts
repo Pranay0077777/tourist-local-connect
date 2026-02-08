@@ -125,11 +125,23 @@ export const seedData = async () => {
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash('password123', salt);
 
-        // ALWAYS Reset for this specific restoration request to ensure all 25 are clean
-        console.log('Cleaning existing data for full restoration...');
+        // 1. Check if guides already exist to avoid accidental wipes
+        const guideCountResult = await db.queryOne('SELECT COUNT(*) as count FROM guides');
+        const hasGuides = parseInt(guideCountResult?.count || '0') > 0;
+
+        if (hasGuides) {
+            console.log("System: Professional guide data already present. Skipping re-seed to protect user favorites/data.");
+            return;
+        }
+
+        console.log("System: Performing full restoration reset (Empty DB detected)...");
         const tables = ['messages', 'bookings', 'reviews', 'favorites', 'guide_availability_slots', 'posts', 'saved_itineraries', 'guides', 'users'];
         for (const table of tables) {
-            await db.exec(`DELETE FROM ${table}`);
+            try {
+                await db.exec(`DELETE FROM ${table}`);
+            } catch (e) {
+                console.warn(`Cleanup Warning for table ${table}:`, e instanceof Error ? e.message : String(e));
+            }
         }
 
         const allGuides: any[] = [];

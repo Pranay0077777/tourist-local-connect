@@ -63,8 +63,12 @@ class DB {
         try {
             const res = await this.pgPool.query(this.formatQuery(sql), params);
             return res.rows;
-        } catch (error) {
-            console.error("DB Query Error:", sql, error);
+        } catch (error: any) {
+            console.error("DB Query Error:", { sql, error: error.message });
+            // If connection lost, try to verify
+            if (error.message.includes('connection') || error.message.includes('terminated')) {
+                this.verifyConnection();
+            }
             throw error;
         }
     }
@@ -73,8 +77,11 @@ class DB {
         try {
             const res = await this.pgPool.query(this.formatQuery(sql), params);
             return res.rows[0] || null;
-        } catch (error) {
-            console.error("DB QueryOne Error:", sql, error);
+        } catch (error: any) {
+            console.error("DB QueryOne Error:", { sql, error: error.message });
+            if (error.message.includes('connection') || error.message.includes('terminated')) {
+                this.verifyConnection();
+            }
             throw error;
         }
     }
@@ -83,8 +90,11 @@ class DB {
         try {
             const res = await this.pgPool.query(this.formatQuery(sql), params);
             return { changes: res.rowCount };
-        } catch (error) {
-            console.error("DB Exec Error:", sql, error);
+        } catch (error: any) {
+            console.error("DB Exec Error:", { sql, error: error.message });
+            if (error.message.includes('connection') || error.message.includes('terminated')) {
+                this.verifyConnection();
+            }
             throw error;
         }
     }
