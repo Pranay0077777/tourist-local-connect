@@ -33,7 +33,8 @@ export const api = {
      */
     getAssetUrl: (path: string) => {
         if (!path) return '';
-        if (path.startsWith('http')) return path;
+        // Skip transformation for absolute URLs, blob URLs (previews), and data URLs (base64)
+        if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) return path;
 
         // Static assets moved to public/uploads/cities are served from the frontend root in production
         if (path.includes('/uploads/cities/')) {

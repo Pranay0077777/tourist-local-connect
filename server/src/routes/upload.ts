@@ -20,25 +20,35 @@ const upload = multer({
 });
 
 // Upload Endpoint
-router.post('/', upload.single('image'), (req, res) => {
-    try {
-        if (!req.file) {
-            res.status(400).json({ success: false, error: 'No file uploaded' });
-            return;
+router.post('/', (req, res) => {
+    upload.single('image')(req, res, (err: any) => {
+        if (err instanceof multer.MulterError) {
+            console.error('Multer error:', err);
+            return res.status(400).json({ success: false, error: `Upload error: ${err.message}` });
+        } else if (err) {
+            console.error('General upload error:', err);
+            return res.status(400).json({ success: false, error: err.message || 'Check file type and size' });
         }
 
-        // Return the Cloudinary URL (req.file.path contains the secure URL)
-        const fileUrl = (req.file as any).path;
+        try {
+            if (!req.file) {
+                return res.status(400).json({ success: false, error: 'No file selected' });
+            }
 
-        res.json({
-            success: true,
-            url: fileUrl,
-            filename: req.file.filename
-        });
-    } catch (error: any) {
-        console.error('Upload error:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
+            // Return the Cloudinary URL (req.file.path contains the secure URL)
+            const fileUrl = (req.file as any).path;
+            console.log('File uploaded to Cloudinary:', fileUrl);
+
+            res.json({
+                success: true,
+                url: fileUrl,
+                filename: req.file.filename
+            });
+        } catch (error: any) {
+            console.error('Post-processing error:', error);
+            res.status(500).json({ success: false, error: 'Failed to process uploaded file' });
+        }
+    });
 });
 
 export default router;

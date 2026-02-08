@@ -263,23 +263,34 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                                             const previewUrl = URL.createObjectURL(file);
                                             setFormData(prev => ({ ...prev, avatar: previewUrl }));
 
-                                            const formData = new FormData();
-                                            formData.append('image', file);
+                                            const uploadFormData = new FormData();
+                                            uploadFormData.append('image', file);
+
+                                            console.log("ProfileSettings: Starting upload for", file.name);
                                             try {
                                                 const res = await fetch('/api/upload', {
                                                     method: 'POST',
-                                                    body: formData
+                                                    body: uploadFormData
                                                 });
+
+                                                if (!res.ok) {
+                                                    const errorText = await res.text();
+                                                    console.error("Upload failed server side:", errorText);
+                                                    throw new Error(`Server returned ${res.status}: ${errorText}`);
+                                                }
+
                                                 const data = await res.json();
+                                                console.log("ProfileSettings: Upload successful", data);
+
                                                 if (data.success) {
                                                     setFormData(prev => ({ ...prev, avatar: data.url }));
                                                     toast.success("Image uploaded!");
                                                 } else {
-                                                    toast.error("Upload failed: " + data.error);
+                                                    throw new Error(data.error || "Unknown server error");
                                                 }
-                                            } catch (err) {
-                                                console.error(err);
-                                                toast.error("Upload failed");
+                                            } catch (err: any) {
+                                                console.error("ProfileSettings: Photo upload error", err);
+                                                toast.error(`Photo upload failed: ${err.message || 'Check your connection'}`);
                                             }
                                         }
                                     }}

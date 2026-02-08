@@ -162,13 +162,26 @@ router.get('/:id/dashboard-stats', async (req, res) => {
         const { id } = req.params;
 
         // Single-trip database query for all dashboard needs
-        const [guide, bookings] = await Promise.all([
+        const [user, guide, bookings] = await Promise.all([
+            db.queryOne('SELECT email FROM users WHERE id = ?', [id]),
             db.queryOne('SELECT rating, review_count FROM guides WHERE id = ?', [id]),
             db.query('SELECT total_price, status FROM bookings WHERE (guide_id = ? OR guideId = ?)', [id, id])
         ]);
 
         if (!guide) {
             res.status(404).json({ error: 'Guide not found' });
+            return;
+        }
+
+        const isDemoUser = user && (user.email === 'tester@gmail.com' || user.email === 'guide@test.com' || user.email === 'saipranay6733@gmail.com');
+
+        if (isDemoUser) {
+            res.json({
+                totalEarnings: 85000,
+                completedTours: 4,
+                profileViews: 850,
+                rating: 4.5
+            });
             return;
         }
 
@@ -221,7 +234,7 @@ router.get('/:id/earnings', async (req, res) => {
         };
 
         const user = await db.prepare('SELECT email FROM users WHERE id = ?').get(id) as any;
-        const isDemoUser = user && (user.email === 'guide@test.com' || user.email === 'saipranay6733@gmail.com');
+        const isDemoUser = user && (user.email === 'tester@gmail.com' || user.email === 'guide@test.com' || user.email === 'saipranay6733@gmail.com');
 
         if (isDemoUser) {
             if (period === 'daily') {
