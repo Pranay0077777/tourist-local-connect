@@ -1,21 +1,18 @@
-import db from './index';
+﻿import db from './index';
 import bcrypt from 'bcryptjs';
 
 const manualGuides = [
     { name: "Priya Raman", avatar: "/uploads/avatars/tamil_nadu_chennai_female_2_priya_1769952720538.png", gender: "females", city: "Chennai" },
-    { name: "Lakshmi Iyer", avatar: "/uploads/avatars/lakshmi_iyer_portrait.png", gender: "females", city: "Hyderabad" },
-    { name: "Chitra Vijay", avatar: "/uploads/avatars/chitra_vijay_portrait.png", gender: "females", city: "Madurai" },
-    { name: "Senthil Iyer", avatar: "/uploads/avatars/senthil_iyer_portrait.png", gender: "males", city: "Madurai" },
-    { name: "Ajay Nair", avatar: "/uploads/avatars/ajay_nair_portrait.png", gender: "males", city: "Kochi" },
-    { name: "Arun S", avatar: "/uploads/avatars/arun_s_portrait.png", gender: "males", city: "Madurai" },
-    { name: "Latha Hegde", avatar: "/uploads/avatars/latha_hegde_portrait.png", gender: "females", city: "Mysuru" },
     { name: "Rajesh Murthy", avatar: "/uploads/avatars/telangana_hyderabad_male_rajesh_1769953179628.png", gender: "males", city: "Hyderabad" },
     { name: "Amrutha Menon", avatar: "/uploads/avatars/amrutha_menon_kochi.jpg", gender: "females", city: "Kochi" },
     { name: "Vikram Reddy", avatar: "/uploads/avatars/vikram_reddy_bengaluru_1769952126568.png", gender: "males", city: "Bengaluru" },
     { name: "Arjun Kumar", avatar: "/uploads/avatars/arjun_kumar_hyderabad_1769952142020.png", gender: "males", city: "Hyderabad" },
     { name: "Meera Reddy", avatar: "/uploads/avatars/telangana_hyderabad_female_meera_reddy_1769952217602_1769953199300.png", gender: "females", city: "Hyderabad" },
     { name: "Karthik Menon", avatar: "/uploads/avatars/kerala_kochi_male_karthik_menon_1769952701470_1769953258667.png", gender: "males", city: "Kochi" },
+
     { name: "Aditya Iyer", avatar: "/uploads/avatars/aditya_iyer_bengaluru_1769952159382.png", gender: "males", city: "Bengaluru" },
+    { name: "Lakshmi Iyer", avatar: "/uploads/avatars/lakshmi_iyer_hyderabad_1769952176312.png", gender: "females", city: "Hyderabad" },
+    { name: "Deepa Krishnan", avatar: "/uploads/avatars/deepa_krishnan_madurai_1769952198656.png", gender: "females", city: "Madurai" },
     { name: "Suresh Naidu", avatar: "/uploads/avatars/suresh_naidu_hyderabad_1769952217602.png", gender: "males", city: "Hyderabad" },
     { name: "Shanthi Bhat", avatar: "/uploads/avatars/shanthi_bhat_mysuru.jpg", gender: "females", city: "Mysuru" },
     { name: "Sita Reddy", avatar: "/uploads/avatars/sita_reddy_visakhapatnam.jpg", gender: "females", city: "Visakhapatnam" },
@@ -25,9 +22,7 @@ const manualGuides = [
     { name: "Lakshmi Chowdary", avatar: "/uploads/avatars/lakshmi_chowdary_visakhapatnam.jpg", gender: "females", city: "Visakhapatnam" },
     { name: "Gopi Raju", avatar: "/uploads/avatars/gopi_raju_visakhapatnam.jpg", gender: "males", city: "Visakhapatnam" },
     { name: "Naveen Shetty", avatar: "/uploads/avatars/naveen_shetty_karnataka.jpg", gender: "males", city: "Bengaluru" },
-    { name: "Kavitha Nair", avatar: "/uploads/avatars/kavitha_nair_thiruvananthapuram.jpg", gender: "females", city: "Thiruvananthapuram" },
-    { name: "Rahul Varma", avatar: "/uploads/avatars/tvm_guide_1_portrait.png", gender: "males", city: "Thiruvananthapuram" },
-    { name: "Kiran Dev", avatar: "/uploads/avatars/tvm_guide_2_portrait.png", gender: "males", city: "Thiruvananthapuram" }
+    { name: "Kavitha Nair", avatar: "/uploads/avatars/kavitha_nair_thiruvananthapuram.jpg", gender: "females", city: "Thiruvananthapuram" }
 ];
 
 const stateData: Record<string, any> = {
@@ -113,24 +108,22 @@ const maleAvatarFallback = [
     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"
 ];
 
-const reviewers = [
-    { name: "Rahul S.", avatar: "https://i.pravatar.cc/150?u=rahul", comment: "Amazing experience! Very knowledgeable.", tourType: "Heritage Tour" },
-    { name: "Anjali M.", avatar: "https://i.pravatar.cc/150?u=anjali", comment: "The food tour was the highlight! Highly recommend.", tourType: "Food Crawl" },
-    { name: "David W.", avatar: "https://i.pravatar.cc/150?u=david", comment: "Perfect English and great stories.", tourType: "Photography Tour" }
-];
-
-export const seedData = async () => {
-    console.log('🚀 Restoring EXACT Localhost Data: 25 Guides (5 Per State)...');
+const seed = async () => {
+    console.log('≡ƒÜÇ Final Seeding: 5 per STATE, Using AI-Generated Stable Avatars...');
     try {
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash('password123', salt);
 
-        // ALWAYS Reset for this specific restoration request to ensure all 25 are clean
-        console.log('Cleaning existing data for full restoration...');
-        const tables = ['messages', 'bookings', 'reviews', 'favorites', 'guide_availability_slots', 'posts', 'saved_itineraries', 'guides', 'users'];
-        for (const table of tables) {
-            await db.exec(`DELETE FROM ${table}`);
-        }
+        console.log('Cleaning existing data...');
+        await db.prepare('DELETE FROM messages').run();
+        await db.prepare('DELETE FROM bookings').run();
+        await db.prepare('DELETE FROM reviews').run();
+        await db.prepare('DELETE FROM favorites').run();
+        await db.prepare('DELETE FROM guide_availability_slots').run();
+        await db.prepare('DELETE FROM posts').run();
+        await db.prepare('DELETE FROM saved_itineraries').run();
+        await db.prepare('DELETE FROM guides').run();
+        await db.prepare('DELETE FROM users').run();
 
         const allGuides: any[] = [];
         let guideIdCounter = 1;
@@ -189,36 +182,31 @@ export const seedData = async () => {
             }
         }
 
-        console.log(`Inserting exactly ${allGuides.length} guides...`);
-        const insertUser = 'INSERT INTO users (id, name, email, password, role, avatar, location, bio, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-        const insertGuide = `
+        console.log(`Inserting ${allGuides.length} guides...`);
+
+        const insertUserQuery = 'INSERT INTO users (id, name, email, password, role, avatar, location, bio, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        const insertGuideQuery = `
             INSERT INTO guides (id, name, avatar, location, languages, rating, review_count, hourly_rate, specialties, bio, verified, response_time, experience, completed_tours, joined_date, availability, itinerary, hidden_gems) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        const insertReview = 'INSERT INTO reviews (id, guide_id, user_name, user_avatar, rating, comment, date, tour_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 
         for (const g of allGuides) {
-            await db.exec(insertUser, [g.id, g.name, `${g.id}@guide.com`, hashedPass, 'guide', g.avatar, g.location, g.bio, g.location.split(',')[0].trim()]);
-            await db.exec(insertGuide, [
+            await db.prepare(insertUserQuery).run(
+                g.id, g.name, `${g.id}@guide.com`, hashedPass, 'guide', g.avatar, g.location, g.bio, g.location.split(',')[0].trim()
+            );
+            await db.prepare(insertGuideQuery).run(
                 g.id, g.name, g.avatar, g.location, g.languages, g.rating, g.review_count, g.hourly_rate, g.specialties,
                 g.bio, g.verified, g.response_time, g.experience, g.completed_tours, g.joined_date,
                 g.availability, JSON.stringify([]), JSON.stringify([])
-            ]);
-
-            // Add sample reviews
-            for (let i = 0; i < 2; i++) {
-                const rev = reviewers[Math.floor(Math.random() * reviewers.length)];
-                await db.exec(insertReview, [`rev_${g.id}_${i}`, g.id, rev.name, rev.avatar, 5, rev.comment, "2024-01-15", rev.tourType]);
-            }
+            );
         }
 
-        await db.exec(insertUser, ['tourist_1', 'Test Tourist', 'tourist@test.com', hashedPass, 'tourist', 'https://github.com/shadcn.png', 'Mumbai', 'Travel Enthusiast', 'Mumbai']);
-        console.log(`✅ Restoration complete! Exactly ${allGuides.length} guides are back.`);
+        await db.prepare(insertUserQuery).run('tourist_1', 'Test Tourist', 'tourist@test.com', hashedPass, 'tourist', 'https://github.com/shadcn.png', 'Mumbai', 'Travel Enthusiast', 'Mumbai');
+        console.log(`Γ£à Success! Seeded Exactly ${allGuides.length} guides with stable AI avatars.`);
     } catch (err) {
-        console.error('❌ Restoration ERROR:', err);
+        console.error('Γ¥î SEED ERROR:', err);
+        process.exit(1);
     }
 };
 
-if (require.main === module) {
-    seedData().catch(() => process.exit(1));
-}
+seed();
