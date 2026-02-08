@@ -59,6 +59,29 @@ router.post('/posts/:id/like', async (req, res) => {
     }
 });
 
+// POST /api/community/posts/:id/view
+router.post('/posts/:id/view', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.exec('UPDATE posts SET views = COALESCE(views, 0) + 1 WHERE id = ?', [id]);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to increment view' });
+    }
+});
+
+// DELETE /api/community/posts/:id
+router.delete('/posts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.exec('DELETE FROM posts WHERE id = ?', [id]);
+        res.json({ success: true, message: 'Post deleted' });
+    } catch (error) {
+        console.error("Failed to delete post:", error);
+        res.status(500).json({ error: 'Failed to delete post' });
+    }
+});
+
 // POST /api/community/posts/:id/comment
 router.post('/posts/:id/comment', async (req, res) => {
     try {

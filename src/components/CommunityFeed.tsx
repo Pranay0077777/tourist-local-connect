@@ -142,6 +142,28 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
+    const handleDeletePost = async (postId: string) => {
+        if (!window.confirm("Are you sure you want to delete this post?")) return;
+
+        // Optimistic update
+        const previousPosts = [...posts];
+        setPosts(prev => prev.filter(p => p.id !== postId));
+
+        try {
+            const res = await fetch(`/api/community/posts/${postId}`, {
+                method: 'DELETE',
+                headers: api.getHeaders()
+            });
+
+            if (!res.ok) throw new Error("Delete failed");
+            toast.success("Post deleted");
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to delete post");
+            setPosts(previousPosts); // Rollback
+        }
+    };
+
     const handleCreatePost = async () => {
         if (!newPostContent.trim() && !selectedFile) return;
         setIsPosting(true);
@@ -152,13 +174,24 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
                 const formData = new FormData();
                 formData.append('image', selectedFile);
 
+                console.log("Community: Attempting image upload...");
                 const uploadRes = await fetch('/api/upload', {
                     method: 'POST',
                     body: formData
                 });
+
+                if (!uploadRes.ok) {
+                    const errorText = await uploadRes.text();
+                    console.error("Upload failed:", errorText);
+                    throw new Error(`Upload failed: ${uploadRes.status}`);
+                }
+
                 const uploadData = await uploadRes.json();
+                console.log("Community: Upload successful:", uploadData);
                 if (uploadData.success) {
                     imageUrl = uploadData.url;
+                } else {
+                    throw new Error(uploadData.error || "Upload failed");
                 }
             }
 
@@ -171,11 +204,18 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
                 image: imageUrl
             };
 
+            console.log("Community: Creating post...", newPost);
             const res = await fetch('/api/community/posts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPost)
             });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Failed to create post");
+            }
+
             const data = await res.json();
 
             if (data.success) {
@@ -197,9 +237,9 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
                 setNewPostContent("");
                 handleRemoveFile();
             }
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to post");
+        } catch (err: any) {
+            console.error("Community Post Error:", err);
+            toast.error(err.message || "Failed to post");
         } finally {
             setIsPosting(false);
         }
@@ -323,6 +363,7 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
                                 onLike={() => handleLike(post.id)}
                                 onComment={(text) => handleComment(post.id, text)}
                                 onDeleteComment={(commentId) => handleDeleteComment(post.id, commentId)}
+                                onDeletePost={() => handleDeletePost(post.id)}
                             />
                         ))
                     ) : (
@@ -336,7 +377,14 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
     );
 }
 
-function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { post: Post, currentUser: LocalUser, onLike: () => void, onComment: (text: string) => void, onDeleteComment: (id: string) => void }) {
+function PostCard({ post, currentUser, onLike, onComment, onDeleteComment, onDeletePost }: {
+    post: Post,
+    currentUser: LocalUser,
+    onLike: () => void,
+    onComment: (text: string) => void,
+    onDeleteComment: (id: string) => void,
+    onDeletePost: () => void
+}) {
     const [commentText, setCommentText] = useState("");
     const [showComments, setShowComments] = useState(false);
 
@@ -363,12 +411,19 @@ function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { p
         }
     };
 
+    const isOwner = post.user_id === currentUser.id;
+
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden group">
             {/* Header */}
             <div className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <img src={api.getAssetUrl(post.user_avatar)} alt={post.user_name} className="w-10 h-10 rounded-full object-cover" />
+                    <img
+                        src={api.getAssetUrl(post.user_avatar)}
+                        alt={post.user_name}
+                        className="w-10 h-10 rounded-full object-cover"
+                        onError={(e) => e.currentTarget.src = "https://github.com/shadcn.png"}
+                    />
                     <div>
                         <h3 className="font-semibold text-gray-900">{post.user_name}</h3>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
@@ -376,6 +431,16 @@ function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { p
                         </p>
                     </div>
                 </div>
+
+                {isOwner && (
+                    <button
+                        onClick={onDeletePost}
+                        className="text-gray-300 hover:text-red-500 transition-colors p-2"
+                        title="Delete post"
+                    >
+                        <Trash2 className="w-5 h-5" />
+                    </button>
+                )}
             </div>
 
             {/* Content */}
@@ -384,7 +449,12 @@ function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { p
             </div>
             {post.image && (
                 <div className="w-full h-80 bg-gray-100 mt-2">
-                    <img src={api.getAssetUrl(post.image)} alt="Post content" className="w-full h-full object-cover" />
+                    <img
+                        src={api.getAssetUrl(post.image)}
+                        alt="Post content"
+                        className="w-full h-full object-cover"
+                        onError={(e) => e.currentTarget.style.display = 'none'}
+                    />
                 </div>
             )}
 
@@ -400,9 +470,9 @@ function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { p
                     </button>
                     <button
                         onClick={() => setShowComments(!showComments)}
-                        className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
+                        className={`flex items-center gap-2 text-sm font-medium transition-colors ${showComments ? 'text-indigo-600' : 'text-gray-500 hover:text-indigo-600'}`}
                     >
-                        <MessageCircle className="w-5 h-5" />
+                        <MessageCircle className={`w-5 h-5 ${showComments ? 'fill-current' : ''}`} />
                         {post.comments.length}
                     </button>
                     <div className="flex items-center gap-2 text-sm font-medium text-gray-400 cursor-default" title="Views">
@@ -423,31 +493,42 @@ function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { p
             {/* Comments Section */}
             {showComments && (
                 <div className="bg-gray-50 p-4 border-t border-gray-100">
-                    <div className="space-y-4 mb-4 max-h-60 overflow-y-auto">
-                        {post.comments.map((c, i) => (
-                            <div key={i} className="flex gap-2 text-sm group/comment items-start">
-                                <span className="font-bold text-gray-900 whitespace-nowrap">{c.userName}:</span>
-                                <span className="text-gray-700 flex-1 break-words">{c.text}</span>
-                                {(c.userName === currentUser.name || c.userName === currentUser.email || post.user_id === currentUser.id) && c.id && (
-                                    <button
-                                        onClick={() => onDeleteComment(c.id!)}
-                                        className="text-gray-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover/comment:opacity-100"
-                                        title={post.user_id === currentUser.id ? "Delete as post owner" : "Delete comment"}
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                )}
-                            </div>
-                        ))}
+                    <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        {post.comments.length > 0 ? (
+                            post.comments.map((c, i) => (
+                                <div key={i} className="flex gap-2 text-sm group/comment items-start">
+                                    <div className="flex-1">
+                                        <span className="font-bold text-gray-900 mr-2">{c.userName}:</span>
+                                        <span className="text-gray-700 break-words">{c.text}</span>
+                                        <p className="text-[10px] text-gray-400 mt-0.5">
+                                            {new Date(c.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                    {(c.userName === currentUser.name || c.userName === currentUser.email || isOwner) && c.id && (
+                                        <button
+                                            onClick={() => onDeleteComment(c.id!)}
+                                            className="text-gray-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover/comment:opacity-100"
+                                            title={isOwner ? "Delete as post owner" : "Delete comment"}
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-center text-gray-400 text-xs py-2">No comments yet. Start the conversation!</p>
+                        )}
                     </div>
-                    <div className="flex gap-3 items-center pt-2">
-                        <div className="relative flex-1 group">
+
+                    {/* Comment Form - The "Comment Box" */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-2 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all shadow-sm">
+                        <div className="flex gap-3 items-center">
                             <input
                                 type="text"
                                 value={commentText}
                                 onChange={(e) => setCommentText(e.target.value)}
                                 placeholder="Write a comment..."
-                                className="w-full pl-4 pr-12 py-3 text-sm bg-gray-50 border-gray-200 border rounded-[1.25rem] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-400"
+                                className="flex-1 py-2 px-3 text-sm outline-none bg-transparent"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && commentText.trim()) {
                                         onComment(commentText);
@@ -463,12 +544,12 @@ function PostCard({ post, currentUser, onLike, onComment, onDeleteComment }: { p
                                     }
                                 }}
                                 disabled={!commentText.trim()}
-                                className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-200 ${commentText.trim()
-                                    ? 'text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transform hover:scale-105'
-                                    : 'text-gray-300 pointer-events-none'
+                                className={`p-2 rounded-lg transition-all ${commentText.trim()
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
+                                    : 'bg-gray-100 text-gray-400'
                                     }`}
                             >
-                                <Send className="w-4 h-4 fill-current" />
+                                <Send className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
