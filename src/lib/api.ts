@@ -429,30 +429,62 @@ export const api = {
      * Favorites
      */
     getFavorites: async (userId: string): Promise<string[]> => {
-        const res = await fetch(`${API_URL}/api/favorites/${userId}`, {
-            headers: api.getHeaders()
-        });
-        if (!res.ok) throw new Error('Failed to fetch favorites');
-        return res.json();
+        try {
+            const res = await fetch(`${API_URL}/api/favorites/${userId}`, {
+                headers: api.getHeaders()
+            });
+            if (res.ok) return res.json();
+        } catch (e) {
+            console.warn("API: Backend favorites unavailable, using local backup");
+        }
+        
+        // Backup Logic: Return from local storage
+        const { getCurrentUser } = await import("./localStorage");
+        const user = getCurrentUser();
+        return user?.favorites || [];
     },
 
     addFavorite: async (userId: string, guideId: string) => {
-        const res = await fetch(`${API_URL}/api/favorites`, {
-            method: 'POST',
-            headers: api.getHeaders(),
-            body: JSON.stringify({ userId, guideId })
-        });
-        if (!res.ok) throw new Error('Failed to add favorite');
-        return res.json();
+        // ALWAYS update local first for instant feedback (Offline-first / Backup Logic)
+        try {
+            const { toggleFavorite } = await import("./localStorage");
+            toggleFavorite(userId, guideId);
+        } catch (e) {
+            console.error("Local favorite sync failed", e);
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/api/favorites`, {
+                method: 'POST',
+                headers: api.getHeaders(),
+                body: JSON.stringify({ userId, guideId })
+            });
+            if (res.ok) return res.json();
+        } catch (e) {
+            console.warn("API: Backend favorite add failed, saved locally only");
+            return { success: true, localOnly: true };
+        }
     },
 
     removeFavorite: async (userId: string, guideId: string) => {
-        const res = await fetch(`${API_URL}/api/favorites/${userId}/${guideId}`, {
-            method: 'DELETE',
-            headers: api.getHeaders()
-        });
-        if (!res.ok) throw new Error('Failed to remove favorite');
-        return res.json();
+        // ALWAYS update local first (Offline-first / Backup Logic)
+        try {
+            const { toggleFavorite } = await import("./localStorage");
+            toggleFavorite(userId, guideId);
+        } catch (e) {
+            console.error("Local favorite sync failed", e);
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/api/favorites/${userId}/${guideId}`, {
+                method: 'DELETE',
+                headers: api.getHeaders()
+            });
+            if (res.ok) return res.json();
+        } catch (e) {
+            console.warn("API: Backend favorite remove failed, updated locally only");
+            return { success: true, localOnly: true };
+        }
     },
 
     /**
@@ -507,16 +539,20 @@ export const api = {
      * AI Trip Planner
      */
     planTrip: async (data: { city: string, days: number, interests: string[] }) => {
-        const res = await fetch(`${API_URL}/api/ai/plan-trip`, {
-            method: 'POST',
-            headers: api.getHeaders(),
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) {
+        try {
+            const res = await fetch(`${API_URL}/api/ai/plan-trip`, {
+                method: 'POST',
+                headers: api.getHeaders(),
+                body: JSON.stringify(data)
+            });
+            if (res.ok) return res.json();
+            
             const error = await res.json();
             throw new Error(error.error || 'Failed to generate itinerary');
+        } catch (e: any) {
+            console.warn("API: AI Planner backend failed, throwing for local fallback", e);
+            throw e;
         }
-        return res.json();
     },
 
     initializeDatabase: async () => {

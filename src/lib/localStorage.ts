@@ -134,7 +134,22 @@ export const toggleFavorite = (userId: string, guideId: string): string[] => {
     const users = getUsers();
     const userIndex = users.findIndex(u => u.id === userId);
 
-    if (userIndex === -1) return [];
+    if (userIndex === -1) {
+        // Fallback for current user if not in users list (shouldn't happen but for robustness)
+        const currentUser = getCurrentUser();
+        if (currentUser && currentUser.id === userId) {
+            let favorites = currentUser.favorites || [];
+            if (favorites.includes(guideId)) {
+                favorites = favorites.filter(id => id !== guideId);
+            } else {
+                favorites.push(guideId);
+            }
+            currentUser.favorites = favorites;
+            setCurrentUser(currentUser);
+            return favorites;
+        }
+        return [];
+    }
 
     const user = users[userIndex];
     let favorites = user.favorites || [];
@@ -149,13 +164,17 @@ export const toggleFavorite = (userId: string, guideId: string): string[] => {
     user.favorites = favorites;
     users[userIndex] = user;
 
-    // Persist
+    // Persist to all users
     localStorage.setItem(KEYS.USERS, JSON.stringify(users));
 
     // Update current user if matches
     const currentUser = getCurrentUser();
     if (currentUser && currentUser.id === userId) {
-        setCurrentUser(user);
+        // Merge updates to ensure token etc are preserved
+        const updatedCurrentUser = { ...currentUser, favorites };
+        localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(updatedCurrentUser));
+        // Trigger event for UI update
+        window.dispatchEvent(new Event('user-session-updated'));
     }
 
     return favorites;

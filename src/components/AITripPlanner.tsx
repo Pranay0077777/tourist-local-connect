@@ -79,14 +79,26 @@ export function AITripPlanner({ user, onNavigate, onLogout, onViewProfile }: AIT
                 setIsDataReady(true);
                 toast.success("Itinerary Generated!");
             } else {
-                toast.error("Failed to generate itinerary");
-                setIsLoading(false);
+                throw new Error("Empty itinerary from server");
             }
 
         } catch (error: any) {
-            console.error(error);
-            toast.error(error.message || "Failed to generate itinerary. Please try again.");
-            setIsLoading(false);
+            console.error("AI Planner failing, using local backup:", error);
+            
+            // Backup Logic: Generate locally
+            try {
+                const { generateLocalItinerary } = await import("@/lib/itineraryUtils");
+                const localData = generateLocalItinerary(city, parseInt(days), interests);
+                
+                setResult(localData);
+                setIsDataReady(true);
+                toast.info("Using high-quality backup itinerary", {
+                    description: "The AI service is currently busy, but we've got you covered!"
+                });
+            } catch (fallbackError) {
+                toast.error("Complete failure to generate itinerary. Please check your connection.");
+                setIsLoading(false);
+            }
         }
     };
 
