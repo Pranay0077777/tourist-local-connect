@@ -18,6 +18,7 @@ import aiRoutes from './routes/ai';
 import itineraryRoutes from './routes/itineraries';
 import weatherRoutes from './routes/weather';
 import communityRoutes from './routes/community';
+import * as adminRouterModule from './routes/admin';
 import { translateWithAI, generateAIResponse } from './services/aiService';
 import { schemaSql } from './db/schema';
 import { seedData } from './db/seed';
@@ -69,6 +70,8 @@ app.use((req: any, res, next) => {
     next();
 });
 
+const adminRoutes = (adminRouterModule as any).default || adminRouterModule;
+
 app.use('/api/guides', guideRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -83,6 +86,7 @@ app.use('/api/ai', authenticateToken, aiRoutes);
 app.use('/api/itineraries', authenticateToken, itineraryRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/admin', authenticateToken, adminRoutes);
 
 let isSeeding = false;
 

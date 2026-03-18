@@ -32,8 +32,9 @@ export function AITripPlanner({ user, onNavigate, onLogout, onViewProfile }: AIT
     const [isMapFullscreen, setIsMapFullscreen] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-    const [result, setResult] = useState<{ itinerary: string, guides: Guide[], stops?: any[] } | null>(null);
+    const [result, setResult] = useState<{ itinerary: string, guides: Partial<Guide>[], stops?: any[] } | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [failCount, setFailCount] = useState(0);
 
     const interestOptions = ["Food", "Culture", "History", "Nature", "Shopping"];
 
@@ -77,26 +78,35 @@ export function AITripPlanner({ user, onNavigate, onLogout, onViewProfile }: AIT
             if (data.itinerary) {
                 setResult(data);
                 setIsDataReady(true);
+                setFailCount(0); // reset on success
                 toast.success("Itinerary Generated!");
             } else {
                 throw new Error("Empty itinerary from server");
             }
 
         } catch (error: any) {
-            console.error("AI Planner failing, using local backup:", error);
+            console.error("AI Planner failing, error:", error);
             
-            // Backup Logic: Generate locally
-            try {
-                const { generateLocalItinerary } = await import("@/lib/itineraryUtils");
-                const localData = generateLocalItinerary(city, parseInt(days), interests);
-                
-                setResult(localData);
-                setIsDataReady(true);
-                toast.info("Using high-quality backup itinerary", {
-                    description: "The AI service is currently busy, but we've got you covered!"
-                });
-            } catch (fallbackError) {
-                toast.error("Complete failure to generate itinerary. Please check your connection.");
+            const newFailCount = failCount + 1;
+            setFailCount(newFailCount);
+
+            if (newFailCount >= 2) {
+                // Backup Logic: Generate locally after failures
+                try {
+                    const { generateLocalItinerary } = await import("@/lib/itineraryUtils");
+                    const localData = generateLocalItinerary(city, parseInt(days), interests);
+                    
+                    setResult(localData);
+                    setIsDataReady(true);
+                    toast.info("Using high-quality backup itinerary", {
+                        description: "The AI service is currently busy, but we've got you covered!"
+                    });
+                } catch (fallbackError) {
+                    toast.error("Complete failure to generate itinerary. Please check your connection.");
+                    setIsLoading(false);
+                }
+            } else {
+                toast.error("Failed to generate itinerary. Please try again.");
                 setIsLoading(false);
             }
         }
@@ -357,10 +367,10 @@ export function AITripPlanner({ user, onNavigate, onLogout, onViewProfile }: AIT
                                             <h2 className="text-xl font-heading font-bold text-gray-900">Recommended Guides</h2>
                                         </div>
                                         <div className="grid sm:grid-cols-2 gap-4">
-                                            {result.guides.map(guide => (
+                                            {result.guides.map((guide: any) => (
                                                 <GuideCard
                                                     key={guide.id}
-                                                    guide={guide}
+                                                    guide={guide as Guide}
                                                     onViewProfile={onViewProfile}
                                                 />
                                             ))}

@@ -4,9 +4,10 @@ import { type Message } from "@/types";
 // Type Definitions
 export interface LocalUser {
     id: string;
-    name: string;
     email: string;
-    role: 'guide' | 'tourist';
+    role: 'guide' | 'tourist' | 'admin' | string;
+    name?: string;
+    token?: string;
     phone?: string;
     city?: string;
     bio?: string;
@@ -26,7 +27,6 @@ export interface LocalUser {
     verificationStatus?: 'pending' | 'verified' | 'rejected';
     aadharId?: string;
     aadharImage?: string;
-    token?: string;
 }
 
 export interface Booking {

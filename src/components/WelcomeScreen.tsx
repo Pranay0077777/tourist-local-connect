@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
+import { Input } from "./ui/input";
 import { MapPin, User, ShieldCheck, Timer, ArrowRight, Map, Compass, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
+import { setCurrentUser } from "@/lib/localStorage";
+import { useNavigate } from "react-router-dom";
 
 interface WelcomeScreenProps {
     onRoleSelect: (role: 'guide' | 'tourist') => void;
@@ -67,6 +72,29 @@ const STEPS = [
 export function WelcomeScreen({ onRoleSelect }: WelcomeScreenProps) {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showRoleSelection, setShowRoleSelection] = useState(false);
+    
+    // Admin Login State
+    const [showAdminLogin, setShowAdminLogin] = useState(false);
+    const [adminEmail, setAdminEmail] = useState("");
+    const [adminPassword, setAdminPassword] = useState("");
+    const [adminLoading, setAdminLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const handleAdminLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setAdminLoading(true);
+        try {
+            const data = await api.login({ email: adminEmail, password: adminPassword, role: 'admin' });
+            setCurrentUser({ ...data.user, token: data.token });
+            toast.success("Welcome Admin!");
+            navigate('/admin');
+        } catch (error: any) {
+            console.error("Admin login failed", error);
+            toast.error(error.message || "Invalid admin credentials");
+        } finally {
+            setAdminLoading(false);
+        }
+    };
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -249,6 +277,60 @@ export function WelcomeScreen({ onRoleSelect }: WelcomeScreenProps) {
                                         <li>Meet travelers worldwide</li>
                                     </ul>
                                 </div>
+                            </div>
+
+                            {/* Admin Access Section */}
+                            <div className="mt-8 text-center border-t border-gray-200 pt-6">
+                                {!showAdminLogin ? (
+                                    <>
+                                        <p className="text-xs text-gray-500 mb-2">Access admin portal</p>
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm"
+                                            className="bg-gray-100 hover:bg-gray-800 hover:text-white text-gray-600 transition-colors"
+                                            onClick={() => setShowAdminLogin(true)}
+                                        >
+                                            Admin
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <form onSubmit={handleAdminLogin} className="max-w-xs mx-auto space-y-3 mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                                        <p className="text-sm font-semibold text-gray-700 mb-2">Admin Login</p>
+                                        <Input 
+                                            type="email" 
+                                            placeholder="Admin Email" 
+                                            value={adminEmail} 
+                                            onChange={(e) => setAdminEmail(e.target.value)} 
+                                            required 
+                                            className="h-9 text-sm focus-visible:ring-gray-400"
+                                        />
+                                        <Input 
+                                            type="password" 
+                                            placeholder="Password" 
+                                            value={adminPassword} 
+                                            onChange={(e) => setAdminPassword(e.target.value)} 
+                                            required 
+                                            className="h-9 text-sm focus-visible:ring-gray-400"
+                                        />
+                                        <div className="flex gap-2">
+                                            <Button 
+                                                type="button" 
+                                                variant="ghost" 
+                                                className="w-full h-9 text-sm" 
+                                                onClick={() => setShowAdminLogin(false)}
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button 
+                                                type="submit" 
+                                                disabled={adminLoading}
+                                                className="w-full h-9 text-sm bg-gray-900 hover:bg-gray-800 text-white"
+                                            >
+                                                {adminLoading ? "Logging in..." : "Login"}
+                                            </Button>
+                                        </div>
+                                    </form>
+                                )}
                             </div>
 
                         </motion.div>

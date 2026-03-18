@@ -2,7 +2,8 @@ export const ADMIN_EMAILS = [
     'tourist@test.com',
     'guide@test.com',
     'saipranay6733@gmail.com',
-    'admin@test.com'
+    'admin@test.com',
+    'admin33@tlc.com'
 ];
 
 /**

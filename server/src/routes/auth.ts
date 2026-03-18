@@ -20,8 +20,13 @@ router.post('/login', async (req, res) => {
             }
 
             // Enforce Role Check
-            if (role && user.role !== role) {
+            if (role && user.role !== role && !user.role.startsWith('blocked_')) {
                 res.status(403).json({ error: `Account registered as ${user.role}. Please login from correct portal.` });
+                return;
+            }
+
+            if (user.role && user.role.startsWith('blocked_')) {
+                res.status(403).json({ error: 'Your account has been suspended. Please contact support.' });
                 return;
             }
 

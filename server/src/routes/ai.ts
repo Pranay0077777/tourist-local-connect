@@ -321,20 +321,28 @@ router.post('/plan-trip', async (req, res) => {
         // Improved Guide Matching: More lenient location search
         const allGuides = await db.query(`SELECT * FROM guides WHERE location ILIKE ?`, [`%${city}%`]);
 
+        const safeInterests = Array.isArray(interests) ? interests : (interests ? [interests] : []);
+
         const scoredGuides = allGuides.map(guide => {
             let score = 0;
-            const specs = typeof guide.specialties === 'string' ? JSON.parse(guide.specialties || '[]') : guide.specialties;
-            interests.forEach((interest: string) => {
+            const specsStr = guide.specialties;
+            const specs = typeof specsStr === 'string' ? JSON.parse(specsStr || '[]') : (specsStr || []);
+            
+            safeInterests.forEach((interest: string) => {
                 if (specs.some((s: string) => s.toLowerCase().includes(interest.toLowerCase()))) {
                     score += 1;
                 }
             });
+            
+            const langsStr = guide.languages;
+            const langs = typeof langsStr === 'string' ? JSON.parse(langsStr || '[]') : (langsStr || []);
+
             return {
                 id: guide.id,
                 name: guide.name,
                 avatar: guide.avatar,
                 location: guide.location,
-                languages: typeof guide.languages === 'string' ? JSON.parse(guide.languages || '[]') : guide.languages,
+                languages: langs,
                 rating: guide.rating,
                 reviewCount: guide.review_count,
                 hourlyRate: guide.hourly_rate,

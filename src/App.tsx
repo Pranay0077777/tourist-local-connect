@@ -26,6 +26,7 @@ const CompletedToursPage = lazy(() => import('./components/CompletedToursPage').
 const ProfileStatsPage = lazy(() => import('./components/ProfileStatsPage').then(m => ({ default: m.ProfileStatsPage })));
 const ReviewsPage = lazy(() => import('./components/ReviewsPage').then(m => ({ default: m.ReviewsPage })));
 const CommunityFeed = lazy(() => import('./components/CommunityFeed').then(m => ({ default: m.CommunityFeed })));
+const BlockedScreen = lazy(() => import('./components/BlockedScreen').then(m => ({ default: m.BlockedScreen })));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -100,12 +101,16 @@ function AppContent() {
 
   const ProtectedRoute = ({ children, role }: { children: React.ReactNode, role?: 'guide' | 'tourist' }) => {
     if (!currentUser) return <Navigate to="/welcome" replace />;
+    if (currentUser.role.startsWith('blocked_')) return <Navigate to="/blocked" replace />;
     if (role && currentUser.role !== role) return <Navigate to="/" replace />;
     return <div className="animate-fade-in w-full min-h-screen">{children}</div>;
   };
 
   const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-    if (currentUser) return <Navigate to="/" replace />;
+    if (currentUser) {
+      if (currentUser.role === 'admin') return <Navigate to="/admin" replace />;
+      return <Navigate to="/" replace />;
+    }
     return <>{children}</>;
   };
 
@@ -123,7 +128,9 @@ function AppContent() {
           {/* Home Route (Dynamic based on role) */}
           <Route path="/" element={
             <ProtectedRoute>
-              {currentUser?.role === 'guide' ? (
+              {currentUser?.role === 'admin' ? (
+                <Navigate to="/admin" replace />
+              ) : currentUser?.role === 'guide' ? (
                 <GuideHomePage user={currentUser!} onNavigate={handleNavigate} onLogout={handleLogout} />
               ) : (
                 <TravellerHomePage user={currentUser!} onNavigate={handleNavigate} onLogout={handleLogout} />
@@ -153,6 +160,11 @@ function AppContent() {
 
           {/* Admin Route */}
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard currentUser={currentUser!} onNavigate={handleNavigate} onLogout={handleLogout} /></ProtectedRoute>} />
+
+          {/* Blocked User Route */}
+          <Route path="/blocked" element={
+              currentUser?.role?.startsWith('blocked_') ? <BlockedScreen /> : <Navigate to="/" replace />
+          } />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
