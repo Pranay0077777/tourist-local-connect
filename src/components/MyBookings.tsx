@@ -306,7 +306,7 @@ export function MyBookings({ user, onNavigate }: MyBookingsProps) {
                         onSuccess={() => { }}
                         guideId={selectedBookingForReview.guideId}
                         guideName={selectedBookingForReview.guideName}
-                        userName={user.name}
+                        userName={user.name || "User"}
                         tourType={selectedBookingForReview.tourType}
                     />
                 )}
@@ -314,7 +314,7 @@ export function MyBookings({ user, onNavigate }: MyBookingsProps) {
                 {selectedBookingForTracking && (
                     <LiveTracker
                         bookingId={selectedBookingForTracking.id}
-                        currentUser={user}
+                        currentUser={{ id: user.id, role: user.role as "guide" | "tourist", name: user.name || "User" }}
                         targetName={isGuide ? selectedBookingForTracking.touristName : selectedBookingForTracking.guideName}
                         onClose={() => setSelectedBookingForTracking(null)}
                     />

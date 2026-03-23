@@ -86,7 +86,7 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
         if (!text.trim()) return;
 
         const tempId = `temp_${Date.now()}`;
-        const optimisticComment = { id: tempId, userName: user.name, text, timestamp: new Date().toISOString() };
+        const optimisticComment = { id: tempId, userName: user.name || "User", text, timestamp: new Date().toISOString() };
 
         setPosts(prev => prev.map((p: Post) =>
             p.id === postId ? { ...p, comments: [...p.comments, optimisticComment] } : p
@@ -96,7 +96,7 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
             const res = await fetch(`/api/community/posts/${postId}/comment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userName: user.name, text })
+                body: JSON.stringify({ userName: user.name || "User", text })
             });
             const data = await res.json();
 
@@ -197,7 +197,7 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
 
             const newPost = {
                 userId: user.id,
-                userName: user.name,
+                userName: user.name || "User",
                 userAvatar: user.avatar || "https://github.com/shadcn.png",
                 content: newPostContent,
                 city: newPostCity,
@@ -227,7 +227,7 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
                     comments: [],
                     created_at: new Date().toISOString(),
                     user_id: user.id, // match Post interface
-                    user_name: user.name,
+                    user_name: user.name || "User",
                     user_avatar: user.avatar || "",
                     liked: false,
                     views: 0

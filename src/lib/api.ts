@@ -400,14 +400,30 @@ export const api = {
      * Auth Methods
      */
     login: async (credentials: any) => {
-        const res = await fetch(`${API_URL}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials)
-        });
+        let res;
+        try {
+            res = await fetch(`${API_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credentials)
+            });
+        } catch (e) {
+            throw new Error("Unable to connect to the server. It might be starting up, please wait a minute and try again.");
+        }
+
         if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.error || 'Login failed');
+            let errorMsg = 'Login failed';
+            try {
+                const errorData = await res.json();
+                errorMsg = errorData.error || errorMsg;
+            } catch (e) {
+                if (res.status === 502 || res.status === 503 || res.status === 504) {
+                    errorMsg = "The server is currently waking up from sleep. Please try again in 30 seconds.";
+                } else {
+                    errorMsg = `Server error (${res.status}). Please try again later.`;
+                }
+            }
+            throw new Error(errorMsg);
         }
         return res.json();
     },
@@ -422,6 +438,23 @@ export const api = {
             const error = await res.json();
             throw new Error(error.error || 'Registration failed');
         }
+        return res.json();
+    },
+
+    uploadImage: async (file: File) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const res = await fetch(`${API_URL}/api/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(`Upload failed (${res.status}): ${errorText}`);
+        }
+        
         return res.json();
     },
 

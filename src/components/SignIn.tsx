@@ -39,8 +39,8 @@ export function SignIn({ role, onSuccess, onBack, onSwitchToSignUp }: SignInProp
             onSuccess();
         } catch (error: any) {
             console.error("Login failed", error);
-            // Show specific error from backend
-            toast.error(error.message || "Invalid credentials or role mismatch.");
+            // Show specific error from backend or fallback network message
+            toast.error(error.message || "An unexpected error occurred.");
         } finally {
             setIsLoading(false);
         }

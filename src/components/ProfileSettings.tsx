@@ -5,6 +5,7 @@ import { ArrowLeft, Save, User, MapPin, Mail, Phone, Loader2, ShieldCheck, Langu
 import { toast } from "sonner";
 import { RoleAwareHeader } from "./RoleAwareHeader";
 import { api } from "@/lib/api";
+import { ImageCropperModal } from "./ImageCropperModal";
 
 interface ProfileSettingsProps {
     user: LocalUser;
@@ -15,6 +16,8 @@ interface ProfileSettingsProps {
 export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [verificationStatus, setVerificationStatus] = useState<'idle' | 'processing' | 'verified'>('idle');
+    const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
     const parseArray = (val: any) => {
         if (Array.isArray(val)) return val;
         if (typeof val === 'string' && val.trim()) {
@@ -264,39 +267,13 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                                     onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                            // 1. Instant Preview (Optimistic)
-                                            const previewUrl = URL.createObjectURL(file);
-                                            setFormData(prev => ({ ...prev, avatar: previewUrl }));
-
-                                            const uploadFormData = new FormData();
-                                            uploadFormData.append('image', file);
-
-                                            console.log("ProfileSettings: Starting upload for", file.name);
-                                            try {
-                                                const res = await fetch('/api/upload', {
-                                                    method: 'POST',
-                                                    body: uploadFormData
-                                                });
-
-                                                if (!res.ok) {
-                                                    const errorText = await res.text();
-                                                    console.error("Upload failed server side:", errorText);
-                                                    throw new Error(`Server returned ${res.status}: ${errorText}`);
-                                                }
-
-                                                const data = await res.json();
-                                                console.log("ProfileSettings: Upload successful", data);
-
-                                                if (data.success) {
-                                                    setFormData(prev => ({ ...prev, avatar: data.url }));
-                                                    toast.success("Image uploaded!");
-                                                } else {
-                                                    throw new Error(data.error || "Unknown server error");
-                                                }
-                                            } catch (err: any) {
-                                                console.error("ProfileSettings: Photo upload error", err);
-                                                toast.error(`Photo upload failed: ${err.message || 'Check your connection'}`);
-                                            }
+                                            const reader = new FileReader();
+                                            reader.onload = () => {
+                                                setSelectedImageSrc(reader.result as string);
+                                                setIsCropModalOpen(true);
+                                            };
+                                            reader.readAsDataURL(file);
+                                            e.target.value = ''; // allow same file selection again
                                         }
                                     }}
                                     className="w-full text-sm text-gray-500
@@ -516,6 +493,40 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                         </div>
                     </form>
                 </div>
+
+                <ImageCropperModal
+                    isOpen={isCropModalOpen}
+                    onClose={() => {
+                        setIsCropModalOpen(false);
+                        setSelectedImageSrc(null);
+                    }}
+                    imageSrc={selectedImageSrc}
+                    onCropComplete={async (croppedFile) => {
+                        setIsCropModalOpen(false);
+                        setSelectedImageSrc(null);
+                        
+                        // Optimistic preview
+                        const previewUrl = URL.createObjectURL(croppedFile);
+                        setFormData(prev => ({ ...prev, avatar: previewUrl }));
+
+                        try {
+                            console.log("ProfileSettings: Starting upload for", croppedFile.name);
+                            const data = await api.uploadImage(croppedFile);
+                            
+                            console.log("ProfileSettings: Upload successful", data);
+                            if (data.success) {
+                                setFormData(prev => ({ ...prev, avatar: data.url }));
+                                toast.success("Profile picture updated!");
+                            } else {
+                                throw new Error(data.error || "Unknown server error");
+                            }
+                        } catch (err: any) {
+                            console.error("ProfileSettings: Photo upload error", err);
+                            toast.error(`Photo upload failed: ${err.message || 'Check your connection'}`);
+                            // Fallback to old avatar or let optimistic stay
+                        }
+                    }}
+                />
             </main>
         </div>
     );

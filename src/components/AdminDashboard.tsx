@@ -9,14 +9,14 @@ import type {
     AdminBookingsOverview 
 } from "@/lib/adminApi";
 import { 
-    Users, DollarSign, ShieldCheck, Map, 
-    Check, X, FileText, BarChart3, MessageSquare, 
-    LogOut, UserCircle, Briefcase, Calendar, Edit2
+    Users, DollarSign, ShieldCheck, 
+    Check, X, BarChart3, MessageSquare, 
+    LogOut, Briefcase, Edit2
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 
@@ -28,10 +28,10 @@ interface AdminDashboardProps {
 
 type TabType = 'overview' | 'verifications' | 'tourists' | 'bookings' | 'contact';
 
-export function AdminDashboard({ currentUser, onNavigate, onLogout }: AdminDashboardProps) {
+export function AdminDashboard({ currentUser, onNavigate: _onNavigate, onLogout }: AdminDashboardProps) {
     const [activeTab, setActiveTab] = useState<TabType>('overview');
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [_error, setError] = useState<string | null>(null);
 
     // Data States
     const [overviewData, setOverviewData] = useState<AdminOverviewStats | null>(null);
