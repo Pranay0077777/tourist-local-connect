@@ -15,7 +15,7 @@ interface ProfileSettingsProps {
 
 export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [verificationStatus, setVerificationStatus] = useState<'idle' | 'processing' | 'verified'>('idle');
+    const [verificationStatus, setVerificationStatus] = useState<'idle' | 'processing' | 'verified' | 'pending' | 'rejected'>(user.verificationStatus as any || 'idle');
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
     const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
     const parseArray = (val: any) => {
@@ -56,12 +56,18 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                         languages: parseArray(guide.languages),
                         experience: guide.experience || ""
                     }));
-                    if (guide.verified) {
+                    if ((guide as any).verificationStatus) {
+                        setVerificationStatus((guide as any).verificationStatus as any);
+                    } else if (guide.verified) {
                         setVerificationStatus('verified');
+                    } else if (user.verificationStatus) {
+                        setVerificationStatus(user.verificationStatus as any);
                     }
                 }
             }).catch(() => {
-                // ignore if not found or error
+                if (user.verificationStatus) {
+                    setVerificationStatus(user.verificationStatus as any);
+                }
             });
         }
     }, [user.id, user.role]);
@@ -89,21 +95,19 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
         setVerificationStatus('processing');
 
         try {
-            await fetch(`/api/guides/${user.id}/verify`, { method: 'POST' });
-            setVerificationStatus('verified');
+            await api.updateUser(user.id, { verificationStatus: 'pending' });
+            setVerificationStatus('pending');
 
-            // Update local session to reflect verification so Dashboard updates immediately
-            // Also add a placeholder aadhar_number so "Profile Strength" hits 100%
+            // Update local session to reflect pending verification so Dashboard updates
             const updatedUser: LocalUser = {
                 ...user,
-                verificationStatus: 'verified',
-                aadhar_number: 'VERIFIED_USER_GENERIC'
+                verificationStatus: 'pending'
             };
             setCurrentUser(updatedUser);
 
-            toast.success("Identity Verified Successfully!");
+            toast.success("Identity Verification Submitted! Under Review by Admin.");
         } catch (error) {
-            toast.error("Verification failed");
+            toast.error("Verification submission failed");
             setVerificationStatus('idle');
         }
     };
@@ -388,6 +392,19 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                                                 <div className="flex items-center gap-2 text-green-600 font-bold bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
                                                     <ShieldCheck className="w-4 h-4" /> Verified
                                                 </div>
+                                            ) : verificationStatus === 'pending' ? (
+                                                <div className="flex items-center gap-2 text-yellow-600 font-bold bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-100">
+                                                    <Loader2 className="w-4 h-4 animate-spin" /> Under Review
+                                                </div>
+                                            ) : verificationStatus === 'rejected' ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={handleVerify}
+                                                    className="border-red-200 text-red-700 hover:bg-red-50"
+                                                >
+                                                    Rejected - Retry
+                                                </Button>
                                             ) : (
                                                 <Button
                                                     type="button"
