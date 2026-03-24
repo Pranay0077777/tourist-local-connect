@@ -14,7 +14,7 @@ export const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
         return {
-            folder: 'tourist-local-connect',
+            folder: 'localy',
             format: 'webp', // Standardizing on modern webp
             public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
         };

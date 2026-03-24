@@ -184,7 +184,7 @@ export function AdminDashboard({ currentUser, onNavigate: _onNavigate, onLogout 
                 <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                     Admin Portal
                 </h2>
-                <p className="text-xs text-muted-foreground mt-1">Tourist Local Connect</p>
+                <p className="text-xs text-muted-foreground mt-1">Localy - Connect with local expertise</p>
             </div>
             
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

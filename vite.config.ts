@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'Tourist Local Connect',
-        short_name: 'TouristApp',
+        name: 'Localy - Connect with local expertise',
+        short_name: 'Localy',
         description: 'Connect with local guides for authentic experiences',
         theme_color: '#0ea5e9',
         icons: [
