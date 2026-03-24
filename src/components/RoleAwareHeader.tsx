@@ -98,7 +98,7 @@ export function RoleAwareHeader({ user, currentPage, onNavigate, onLogout }: Rol
                     </div>
                     <div className="flex flex-col">
                         <h1 className="text-xl font-bold text-foreground leading-none font-heading tracking-tight">
-                            Tourist Local
+                            Localy
                         </h1>
                         <span className={`text-[10px] font-bold text-gray-500 uppercase tracking-widest hidden sm:block`}>
                             {user.role} Dashboard
