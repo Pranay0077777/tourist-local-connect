@@ -119,4 +119,5 @@ CREATE TABLE IF NOT EXISTS posts (
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_guides_location ON guides(location);
 CREATE INDEX IF NOT EXISTS idx_users_city ON users(city);
+ALTER TABLE messages ADD COLUMN translated_text TEXT;
 `;

@@ -24,6 +24,7 @@ export function GuideCard({ guide, user, onViewProfile, isFavorite: initialFavor
 
     const toggleFavorite = async (e: React.MouseEvent) => {
         e.stopPropagation();
+        e.preventDefault();
 
         if (user) {
             // API
@@ -64,6 +65,7 @@ export function GuideCard({ guide, user, onViewProfile, isFavorite: initialFavor
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-200" />
 
                 <button
+                    type="button"
                     className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white shadow-md transition-all duration-200 z-10 active:scale-95"
                     onClick={toggleFavorite}
                 >
