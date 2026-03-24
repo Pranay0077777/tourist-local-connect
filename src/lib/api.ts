@@ -25,6 +25,13 @@ let metadataPromise: Promise<any> | null = null;
 let statsCache: Record<string, { data: any, timestamp: number }> = {};
 const STATS_CACHE_TTL = 30000; // 30 seconds
 
+// SWR Caches for instant tab switching across the app
+let guidesCache: { data: Guide[], timestamp: number } | null = null;
+let conversationsCache: Record<string, { data: any[], timestamp: number }> = {};
+let bookingsCache: Record<string, { data: any[], timestamp: number }> = {};
+let favoritesCache: Record<string, { data: string[], timestamp: number }> = {};
+const CACHE_TTL = 60000; // 60 seconds
+
 export const api = {
     /**
      * Helper to resolve asset URLs.
@@ -33,8 +40,20 @@ export const api = {
      */
     getAssetUrl: (path: string) => {
         if (!path) return '';
-        // Skip transformation for absolute URLs, blob URLs (previews), and data URLs (base64)
-        if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) return path;
+        
+        // Skip transformation for local blob URLs or base64 data
+        if (path.startsWith('blob:') || path.startsWith('data:')) return path;
+
+        // Automatically optimize any Cloudinary URL to be lightning fast
+        if (path.includes('res.cloudinary.com') && path.includes('/upload/')) {
+            if (!path.includes('f_auto') || !path.includes('q_auto')) {
+                return path.replace('/upload/', '/upload/f_auto,q_auto,w_600,c_limit/');
+            }
+            return path;
+        }
+
+        // Return unchanged if it's already an absolute URL (like un-optimizable external links)
+        if (path.startsWith('http')) return path;
 
         // Static assets moved to public/uploads/cities are served from the frontend root in production
         if (path.includes('/uploads/cities/')) {
@@ -78,6 +97,18 @@ export const api = {
      * Fetch all guides with optional filtering
      */
     fetchGuides: async (filters?: SearchFilters): Promise<Guide[]> => {
+        const hasFilters = filters && Object.keys(filters).length > 0;
+
+        // SWR (Stale-While-Revalidate) Pattern: Return cached datainstantly
+        if (!hasFilters && guidesCache && (Date.now() - guidesCache.timestamp < CACHE_TTL)) {
+            // Refresh in background silently
+            fetch(`${API_URL}/api/guides`, { headers: api.getHeaders() })
+                .then(res => res.json())
+                .then(data => { guidesCache = { data, timestamp: Date.now() }; })
+                .catch(() => {});
+            return guidesCache.data; // Instant return!
+        }
+
         const params = new URLSearchParams();
         if (filters) {
             if (filters.query) params.append('query', filters.query);
@@ -97,7 +128,13 @@ export const api = {
 
         const res = await fetch(`${API_URL}/api/guides?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch guides');
-        return res.json();
+        const data = await res.json();
+        
+        // Cache for future quick navigation
+        if (!hasFilters) {
+            guidesCache = { data, timestamp: Date.now() };
+        }
+        return data;
     },
 
     /**
@@ -238,13 +275,22 @@ export const api = {
      * Fetch pending booking requests for a guide
      */
     getBookingRequests: async (guideId: string) => {
+        const cacheKey = `req_${guideId}`;
+        if (bookingsCache[cacheKey] && (Date.now() - bookingsCache[cacheKey].timestamp < CACHE_TTL)) {
+            fetch(`${API_URL}/api/bookings?userId=${guideId}&role=guide`, { headers: api.getHeaders() })
+                .then(res => res.json())
+                .then(data => { bookingsCache[cacheKey] = { data: data.map((b: any) => ({ ...b, totalPrice: b.total_price || b.price, tourType: b.tour_type || b.tourType || 'Standard Tour', touristName: b.userName || 'Unknown', time: b.time || "10:00 AM", duration: b.duration || 3 })), timestamp: Date.now() }; })
+                .catch(() => {});
+            return bookingsCache[cacheKey].data;
+        }
+
         const res = await fetch(`${API_URL}/api/bookings?userId=${guideId}&role=guide`, {
             headers: api.getHeaders()
         });
         if (!res.ok) throw new Error('Failed to fetch bookings');
         // Format backend status to frontend expectations if needed
         const bookings = await res.json();
-        return bookings.map((b: any) => ({
+        const formatted = bookings.map((b: any) => ({
             id: b.id,
             touristName: b.userName || 'Unknown',
             date: b.date,
@@ -254,23 +300,36 @@ export const api = {
             status: b.status,
             tourType: b.tour_type || b.tourType || 'Standard Tour'
         }));
+        bookingsCache[`req_${guideId}`] = { data: formatted, timestamp: Date.now() };
+        return formatted;
     },
 
     /**
      * Get bookings for a user (Tourist view)
      */
     getBookings: async (userId: string) => {
+        const cacheKey = `book_${userId}`;
+        if (bookingsCache[cacheKey] && (Date.now() - bookingsCache[cacheKey].timestamp < CACHE_TTL)) {
+            fetch(`${API_URL}/api/bookings?userId=${userId}&role=tourist`, { headers: api.getHeaders() })
+                .then(res => res.json())
+                .then(data => { bookingsCache[cacheKey] = { data: data.map((b: any) => ({ ...b, totalPrice: b.total_price || b.price, guideName: b.guideName || 'Guide', tourType: b.tour_type || b.tourType || 'Custom Tour' })), timestamp: Date.now() }; })
+                .catch(() => {});
+            return bookingsCache[cacheKey].data;
+        }
+
         const res = await fetch(`${API_URL}/api/bookings?userId=${userId}&role=tourist`, {
             headers: api.getHeaders()
         });
         if (!res.ok) throw new Error('Failed to fetch bookings');
         const data = await res.json();
-        return data.map((b: any) => ({
+        const formatted = data.map((b: any) => ({
             ...b,
             totalPrice: b.total_price || b.price,
             guideName: b.guideName || 'Guide',
             tourType: b.tour_type || b.tourType || 'Custom Tour'
         }));
+        bookingsCache[`book_${userId}`] = { data: formatted, timestamp: Date.now() };
+        return formatted;
     },
 
     /**
@@ -378,11 +437,21 @@ export const api = {
      * Get unique list of conversations for a user
      */
     getConversations: async (userId: string): Promise<any[]> => {
+        if (conversationsCache[userId] && (Date.now() - conversationsCache[userId].timestamp < CACHE_TTL)) {
+            fetch(`${API_URL}/api/messages/conversations/${userId}`, { headers: api.getHeaders() })
+                .then(res => res.json())
+                .then(data => { conversationsCache[userId] = { data, timestamp: Date.now() }; })
+                .catch(() => {});
+            return conversationsCache[userId].data;
+        }
+
         const res = await fetch(`${API_URL}/api/messages/conversations/${userId}`, {
             headers: api.getHeaders()
         });
         if (!res.ok) throw new Error('Failed to fetch conversations');
-        return res.json();
+        const data = await res.json();
+        conversationsCache[userId] = { data, timestamp: Date.now() };
+        return data;
     },
 
     /**
@@ -462,11 +531,23 @@ export const api = {
      * Favorites
      */
     getFavorites: async (userId: string): Promise<string[]> => {
+        if (favoritesCache[userId] && (Date.now() - favoritesCache[userId].timestamp < CACHE_TTL)) {
+            fetch(`${API_URL}/api/favorites/${userId}`, { headers: api.getHeaders() })
+                .then(res => res.json())
+                .then(data => { favoritesCache[userId] = { data, timestamp: Date.now() }; })
+                .catch(() => {});
+            return favoritesCache[userId].data;
+        }
+
         try {
             const res = await fetch(`${API_URL}/api/favorites/${userId}`, {
                 headers: api.getHeaders()
             });
-            if (res.ok) return res.json();
+            if (res.ok) {
+                const data = await res.json();
+                favoritesCache[userId] = { data, timestamp: Date.now() };
+                return data;
+            }
         } catch (e) {
             console.warn("API: Backend favorites unavailable, using local backup");
         }
