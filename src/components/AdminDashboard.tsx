@@ -10,7 +10,7 @@ import type {
 } from "@/lib/adminApi";
 import { 
     Users, DollarSign, ShieldCheck, 
-    Check, X, BarChart3, MessageSquare, 
+    Check, X, BarChart3, MessageSquare, Phone,
     LogOut, Briefcase, Edit2
 } from "lucide-react";
 import { toast } from "sonner";
@@ -347,6 +347,16 @@ export function AdminDashboard({ currentUser, onNavigate: _onNavigate, onLogout 
                                                 onClick={() => setExpandedAadhaar(expandedAadhaar === guide.id ? null : guide.id)}
                                             >
                                                 {expandedAadhaar === guide.id ? "Hide Aadhaar Details" : "View Aadhaar"}
+                                            </Button>
+                                            <Button 
+                                                variant="outline" 
+                                                className="w-full mb-2 bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                                                onClick={() => {
+                                                    alert(`Initiating secure call to ${guide.name} at their registered mobile number...`);
+                                                }}
+                                            >
+                                                <Phone className="w-4 h-4 mr-2" />
+                                                Call to Verify
                                             </Button>
                                             <div className="flex gap-2">
                                                 <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleVerifyGuide(guide.id, 'verified')}><Check className="w-4 h-4 mr-2"/> Accept</Button>

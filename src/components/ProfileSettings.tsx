@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { RoleAwareHeader } from "./RoleAwareHeader";
 import { api } from "@/lib/api";
 import { ImageCropperModal } from "./ImageCropperModal";
+import { IdentityVerificationModal } from "./IdentityVerificationModal";
 
 interface ProfileSettingsProps {
     user: LocalUser;
@@ -17,6 +18,7 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
     const [isLoading, setIsLoading] = useState(false);
     const [verificationStatus, setVerificationStatus] = useState<'idle' | 'processing' | 'verified' | 'pending' | 'rejected'>(user.verificationStatus as any || 'idle');
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
     const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
     const parseArray = (val: any) => {
         if (Array.isArray(val)) return val;
@@ -91,25 +93,8 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleVerify = async () => {
-        setVerificationStatus('processing');
-
-        try {
-            await api.updateUser(user.id, { verificationStatus: 'pending' });
-            setVerificationStatus('pending');
-
-            // Update local session to reflect pending verification so Dashboard updates
-            const updatedUser: LocalUser = {
-                ...user,
-                verificationStatus: 'pending'
-            };
-            setCurrentUser(updatedUser);
-
-            toast.success("Identity Verification Submitted! Under Review by Admin.");
-        } catch (error) {
-            toast.error("Verification submission failed");
-            setVerificationStatus('idle');
-        }
+    const handleVerify = () => {
+        setIsVerificationModalOpen(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -542,6 +527,17 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                             toast.error(`Photo upload failed: ${err.message || 'Check your connection'}`);
                             // Fallback to old avatar or let optimistic stay
                         }
+                    }}
+                />
+
+                <IdentityVerificationModal
+                    isOpen={isVerificationModalOpen}
+                    onClose={() => setIsVerificationModalOpen(false)}
+                    userId={user.id}
+                    onSuccess={() => {
+                        setVerificationStatus('pending');
+                        const updatedUser: LocalUser = { ...user, verificationStatus: 'pending' };
+                        setCurrentUser(updatedUser);
                     }}
                 />
             </main>

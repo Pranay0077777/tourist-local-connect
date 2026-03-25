@@ -137,13 +137,13 @@ export function WelcomeScreen({ onRoleSelect }: WelcomeScreenProps) {
                             <span>Discover South India</span>
                         </div>
                         <h1 className="text-4xl lg:text-6xl font-bold text-white tracking-tight drop-shadow-lg leading-tight">
-                            Local Hearts, <br />
+                            Real Experiences, <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-green-300">
-                                Unforgettable Journeys.
+                                Not Just Places.
                             </span>
                         </h1>
                         <p className="text-base text-gray-200 leading-relaxed max-w-lg drop-shadow-md">
-                            Connect with verified local guides. Experience culture, food, and stories you won't find in guidebooks.
+                            Connect with verified locals for authentic experiences, culture, food, and stories you won't find in guidebooks.
                         </p>
                     </div>
 

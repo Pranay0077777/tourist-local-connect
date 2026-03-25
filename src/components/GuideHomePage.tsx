@@ -51,42 +51,29 @@ export function GuideHomePage({ user, onNavigate, onLogout }: GuideHomePageProps
     const [stats, setStats] = useState<DashboardStatsData | null>(null);
     const [requests, setRequests] = useState<BookingRequest[]>([]);
     const [loading, setLoading] = useState(true);
+    const [reviews, setReviews] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
-            // For tester profile, initialize with mock data immediately to prevent flashes
-            if (user.email === 'tester@gmail.com') {
-                setStats({
-                    totalEarnings: 85000,
-                    completedTours: 4,
-                    profileViews: 850,
-                    rating: 4.5
-                });
-                // We still fetch requests to see if there are real ones, but we could mock these too
-            }
-
             try {
-                const [statsData, requestsData] = await Promise.all([
+                const [statsData, requestsData, reviewsData] = await Promise.all([
                     api.getGuideStats(user.id),
-                    api.getBookingRequests(user.id)
+                    api.getBookingRequests(user.id),
+                    api.getReviewsForGuide(user.id)
                 ]);
 
-                // Only set stats if not already mocked or if we want to merge (avoiding flash)
-                if (user.email !== 'tester@gmail.com') {
-                    setStats(statsData);
-                }
+                setStats(statsData);
                 setRequests(requestsData);
+                setReviews(reviewsData.slice(0, 3)); // 3 most recent
             } catch (error) {
-                if (user.email !== 'tester@gmail.com') {
-                    toast.error("Failed to load dashboard data");
-                }
+                toast.error("Failed to load dashboard data");
             } finally {
                 setLoading(false);
             }
         };
 
         fetchDashboardData();
-    }, [user.id, user.email]);
+    }, [user.id]);
 
     const handleRequestAction = async (requestId: string, action: 'confirmed' | 'cancelled') => {
         try {
@@ -97,38 +84,6 @@ export function GuideHomePage({ user, onNavigate, onLogout }: GuideHomePageProps
             toast.error("Failed to update booking");
         }
     };
-
-    // MOCK DATA FOR PRESENTATION (Localized to Tester Profile)
-    const isTesterProfile = user.email === 'tester@gmail.com';
-
-    // (Logic moved into useEffect for faster loading/no flash)
-
-    const DEMO_REVIEWS = [
-        {
-            id: 1,
-            author: "Sarah Jenkins",
-            rating: 5,
-            date: "2 days ago",
-            text: "Absolutely amazing experience! The guide was so knowledgeable about the local history and hidden gems. Highly recommended!",
-            avatar: ""
-        },
-        {
-            id: 2,
-            author: "Mike Chen",
-            rating: 5,
-            date: "1 week ago",
-            text: "Great tour! We saw everything we wanted to see and more. Very friendly and professional.",
-            avatar: ""
-        },
-        {
-            id: 3,
-            author: "Priya Sharma",
-            rating: 4,
-            date: "2 weeks ago",
-            text: "Very good experience. The food stops were the highlight.",
-            avatar: ""
-        }
-    ];
 
     return (
         <div className="min-h-screen bg-gray-50/50">
@@ -367,17 +322,21 @@ export function GuideHomePage({ user, onNavigate, onLogout }: GuideHomePageProps
                             </div>
 
                             <div className="space-y-3">
-                                {isTesterProfile && DEMO_REVIEWS.length > 0 ? (
-                                    DEMO_REVIEWS.map(review => (
+                                {reviews.length > 0 ? (
+                                    reviews.map(review => (
                                         <Card key={review.id} className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
                                             <CardContent className="p-4 space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
-                                                            {review.author[0]}
+                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs border border-gray-100">
+                                                            {review.userAvatar ? (
+                                                                <img src={api.getAssetUrl(review.userAvatar)} alt={review.userName} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                review.userName?.[0] || '?'
+                                                            )}
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-semibold text-gray-900">{review.author}</p>
+                                                            <p className="text-sm font-semibold text-gray-900">{review.userName || 'Anonymous'}</p>
                                                             <div className="flex items-center gap-1">
                                                                 <div className="flex text-yellow-400">
                                                                     {Array.from({ length: 5 }).map((_, i) => (
@@ -390,9 +349,9 @@ export function GuideHomePage({ user, onNavigate, onLogout }: GuideHomePageProps
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <span className="text-xs text-gray-400">{review.date}</span>
+                                                    <span className="text-xs text-gray-400">{new Date(review.date).toLocaleDateString()}</span>
                                                 </div>
-                                                <p className="text-sm text-gray-600 italic">"{review.text}"</p>
+                                                <p className="text-sm text-gray-600 italic">"{review.comment}"</p>
                                             </CardContent>
                                         </Card>
                                     ))

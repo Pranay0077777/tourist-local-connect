@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
@@ -29,8 +29,25 @@ interface BookingModalProps {
 export function BookingModal({ isOpen, onClose, guideId, guideName, ratePerPerson, currentUser }: BookingModalProps) {
     const [date, setDate] = useState("");
     const [time, setTime] = useState("");
-    // ... rest of state
+    const [availability, setAvailability] = useState<Record<string, string>>({});
+    const [isValidDate, setIsValidDate] = useState(true);
 
+    // Fetch availability when modal opens
+    useEffect(() => {
+        if (isOpen && guideId) {
+            api.getAvailability(guideId)
+                .then(setAvailability);
+        }
+    }, [isOpen, guideId]);
+
+    const handleDateChange = (newDate: string) => {
+        setDate(newDate);
+        if (newDate && availability[newDate]) {
+            setIsValidDate(availability[newDate] === 'available');
+        } else {
+            setIsValidDate(true); // Default to available if not set
+        }
+    };
     const [duration, setDuration] = useState("3");
     const [guests, setGuests] = useState("2");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,10 +215,15 @@ export function BookingModal({ isOpen, onClose, guideId, guideName, ratePerPerso
                                         id="date"
                                         type="date"
                                         value={date}
-                                        onChange={(e) => setDate(e.target.value)}
-                                        className="border-gray-200 focus:ring-primary focus:border-primary rounded-lg"
+                                        onChange={(e) => handleDateChange(e.target.value)}
+                                        className={`border-gray-200 focus:ring-primary focus:border-primary rounded-lg ${!isValidDate ? 'border-red-500 bg-red-50' : ''}`}
                                         min={new Date().toISOString().split('T')[0]}
                                     />
+                                    {!isValidDate && (
+                                        <p className="text-[10px] text-red-500 font-bold animate-pulse">
+                                            Guide is {availability[date]} on this day
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="time" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
@@ -278,8 +300,8 @@ export function BookingModal({ isOpen, onClose, guideId, guideName, ratePerPerso
                             </Button>
                             <Button
                                 onClick={handleConfirm}
-                                disabled={isSubmitting}
-                                className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
+                                disabled={isSubmitting || !isValidDate || !date || !time}
+                                className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:grayscale disabled:scale-100"
                             >
                                 {isSubmitting ? (
                                     <span className="flex items-center gap-2">

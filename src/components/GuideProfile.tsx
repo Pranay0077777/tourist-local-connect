@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Card, CardContent } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { BookingModal } from "./BookingModal";
+import { GuideCalendar } from "./GuideCalendar";
 import { type LocalUser } from "@/lib/localStorage";
 import { type Guide, type Review } from "@/types";
 import { api } from "@/lib/api";
@@ -20,7 +21,8 @@ import {
     Coffee,
     Utensils,
     ShoppingBag,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Calendar
 } from "lucide-react";
 
 interface GuideProfileProps {
@@ -314,6 +316,31 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
                                     </div>
                                 </div>
                             )}
+
+                            {/* Availability Calendar */}
+                            <div className="mb-8 pt-8 border-t border-gray-100">
+                                <div className="flex items-center gap-2 mb-6">
+                                    <Calendar className="w-6 h-6 text-primary" />
+                                    <h3 className="text-2xl font-bold font-heading text-gray-900">Availability</h3>
+                                </div>
+                                <div className="max-w-md">
+                                    <GuideCalendar guideId={guide.id} className="border border-gray-100" />
+                                    <div className="mt-4 flex gap-4 text-xs text-gray-500 px-2 font-medium">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 rounded-full bg-green-100 border border-green-200" />
+                                            Available
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 rounded-full bg-red-100 border border-red-200" />
+                                            Booked
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 rounded-full bg-gray-100 border border-gray-200" />
+                                            Off
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             {/* Hidden Gems (Locked Content) */}
                             {guide.hiddenGems && (

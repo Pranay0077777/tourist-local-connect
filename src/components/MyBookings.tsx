@@ -1,7 +1,7 @@
 import { type LocalUser, type Booking, getBookingsForUser, getBookingsForGuide } from "@/lib/localStorage";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
-import { Calendar, ArrowLeft, Clock, MapPin, CheckCircle2, XCircle, Star, CreditCard, User } from "lucide-react";
+import { Calendar, ArrowLeft, Clock, MapPin, CheckCircle2, XCircle, Star, CreditCard, User, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { socket } from "@/lib/socket";
@@ -11,7 +11,7 @@ import { ReviewModal } from "./ReviewModal";
 
 interface MyBookingsProps {
     user: LocalUser;
-    onNavigate: (page: string) => void;
+    onNavigate: (page: string, params?: any) => void;
     onLogout: () => void;
 }
 import { LiveTracker } from "./LiveTracker";
@@ -238,13 +238,23 @@ export function MyBookings({ user, onNavigate }: MyBookingsProps) {
                                             )}
 
                                             {booking.status === 'confirmed' && (
-                                                <Button
-                                                    className={`w-full ${isGuide ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`}
-                                                    onClick={() => setSelectedBookingForTracking(booking)}
-                                                >
-                                                    <MapPin className="w-4 h-4 mr-2" />
-                                                    {isGuide ? "Track Live" : "Share Location"}
-                                                </Button>
+                                                <>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200"
+                                                        onClick={() => onNavigate('messages', { initialContactId: isGuide ? booking.touristId : booking.guideId })}
+                                                    >
+                                                        <MessageSquare className="w-4 h-4 mr-2" />
+                                                        Chat
+                                                    </Button>
+                                                    <Button
+                                                        className={`w-full ${isGuide ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`}
+                                                        onClick={() => setSelectedBookingForTracking(booking)}
+                                                    >
+                                                        <MapPin className="w-4 h-4 mr-2" />
+                                                        {isGuide ? "Track Live" : "Share Location"}
+                                                    </Button>
+                                                </>
                                             )}
 
                                             {!isGuide && booking.status === 'completed' && (
