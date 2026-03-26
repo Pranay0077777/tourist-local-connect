@@ -1,6 +1,70 @@
 import db from './index';
 import bcrypt from 'bcryptjs';
 
+const generateRandomAvailability = async (guideId: string) => {
+    const slots: { date: string, status: 'busy' | 'off' }[] = [];
+    const today = new Date();
+
+    // 1. Generate 3-5 random 'off' days in the next 30 days
+    const offDaysCount = 3 + Math.floor(Math.random() * 3); // 3, 4, or 5
+    const offDays = new Set<number>();
+    while (offDays.size < offDaysCount) {
+        offDays.add(Math.floor(Math.random() * 30));
+    }
+
+    offDays.forEach(offset => {
+        const date = new Date(today);
+        date.setDate(today.getDate() + offset);
+        slots.push({ date: date.toISOString().split('T')[0], status: 'off' });
+    });
+
+    // 2. Generate 2-3 separate blocks of 2-3 continuous 'busy' days
+    const blocksCount = 2 + Math.floor(Math.random() * 2); // 2 or 3
+    const usedDays = new Set(Array.from(offDays));
+
+    for (let i = 0; i < blocksCount; i++) {
+        let startOffset = -1;
+        let blockSize = 2 + Math.floor(Math.random() * 2); // 2 or 3
+        
+        // Try to find a free spot for the block
+        let attempts = 0;
+        while (attempts < 50) {
+            const potentialStart = Math.floor(Math.random() * (30 - blockSize));
+            let isFree = true;
+            for (let j = 0; j < blockSize; j++) {
+                if (usedDays.has(potentialStart + j)) {
+                    isFree = false;
+                    break;
+                }
+            }
+            if (isFree) {
+                startOffset = potentialStart;
+                break;
+            }
+            attempts++;
+        }
+
+        if (startOffset !== -1) {
+            for (let j = 0; j < blockSize; j++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + startOffset + j);
+                slots.push({ date: date.toISOString().split('T')[0], status: 'busy' });
+                usedDays.add(startOffset + j);
+            }
+        }
+    }
+
+    // Insert slots into database
+    for (const slot of slots) {
+        const id = `${guideId}_${slot.date}`;
+        await db.exec(`
+            INSERT INTO guide_availability_slots (id, guide_id, date, status)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET status = EXCLUDED.status
+        `, [id, guideId, slot.date, slot.status]);
+    }
+};
+
 const manualGuides = [
     { name: "Priya Raman", avatar: "/uploads/avatars/tamil_nadu_chennai_female_2_priya_1769952720538.png", gender: "females", city: "Chennai" },
     { name: "Lakshmi Iyer", avatar: "/uploads/avatars/lakshmi_iyer_portrait.png", gender: "females", city: "Hyderabad" },
@@ -147,6 +211,8 @@ export const seedData = async () => {
         const allGuides: any[] = [];
         let guideIdCounter = 1;
 
+        const targetGuideIds: string[] = [];
+
         for (const [stateName, data] of Object.entries(stateData)) {
             console.log(`Processing state: ${stateName}`);
             let femaleInState = 0;
@@ -176,10 +242,18 @@ export const seedData = async () => {
                     if (isFemale) femaleInState++;
                 }
 
+                let firstGuideInCityAdded = false;
                 cityGuides.forEach(g => {
+                    const guideId = `guide_${guideIdCounter++}`;
                     const trait = data.traits[Math.floor(Math.random() * data.traits.length)];
+                    
+                    if (!firstGuideInCityAdded) {
+                        targetGuideIds.push(guideId);
+                        firstGuideInCityAdded = true;
+                    }
+
                     allGuides.push({
-                        id: `guide_${guideIdCounter++}`,
+                        id: guideId,
                         name: g.name,
                         avatar: g.avatar,
                         location: `${cityName}, ${stateName}`,
@@ -221,6 +295,11 @@ export const seedData = async () => {
             for (let i = 0; i < 2; i++) {
                 const rev = reviewers[Math.floor(Math.random() * reviewers.length)];
                 await db.exec(insertReview, [`rev_${g.id}_${i}`, g.id, rev.name, rev.avatar, 5, rev.comment, "2024-01-15", rev.tourType]);
+            }
+
+            // Generate realistic availability for target guides
+            if (targetGuideIds.includes(g.id)) {
+                await generateRandomAvailability(g.id);
             }
         }
 
