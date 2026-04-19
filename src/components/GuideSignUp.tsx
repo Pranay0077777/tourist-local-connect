@@ -129,7 +129,7 @@ export function GuideSignUp({ onSuccess, onBack }: GuideSignUpProps) {
                                     <label className="text-xs font-semibold text-gray-500 ml-1">Aadhar Card Number (12 Digits)</label>
                                     <Input name="aadharNumber" placeholder="XXXX XXXX XXXX" value={formData.aadharNumber} onChange={handleChange} required />
                                 </div>
-                                <Input name="hourlyRate" type="number" placeholder="Hourly Rate (₹)" value={formData.hourlyRate} onChange={handleChange} required />
+                                {/* Reduced cognitive load: packages are assigned automatically by platform */}
                                 <Input name="languages" placeholder="Languages (e.g. English, Hindi)" value={formData.languages} onChange={handleChange} required />
                                 <Input name="specializations" placeholder="Specialties (e.g. History, Food)" value={formData.specializations} onChange={handleChange} required />
                             </div>

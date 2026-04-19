@@ -120,8 +120,8 @@ export function GuideCard({ guide, user, onViewProfile, isFavorite: initialFavor
 
                     <div className="pt-3 border-t border-border/50 flex items-center justify-between">
                         <div>
-                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block mb-0.5">Rate</span>
-                            <span className="text-primary font-bold">₹{guide.hourlyRate}/hr</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block mb-0.5">Pricing</span>
+                            <span className="text-primary font-bold text-sm">View Packages</span>
                         </div>
                         <div className="text-right">
                             <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block mb-0.5">Experience</span>

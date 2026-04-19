@@ -21,12 +21,13 @@ interface BookingModalProps {
     onClose: () => void;
     guideId: string;
     guideName: string;
-    ratePerPerson: number;
+    packagePrice: number;
+    packageName: string;
     currentUser: LocalUser;
 }
 
 
-export function BookingModal({ isOpen, onClose, guideId, guideName, ratePerPerson, currentUser }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, guideId, guideName, packagePrice, packageName, currentUser }: BookingModalProps) {
     const [date, setDate] = useState("");
     const [time, setTime] = useState("");
     const [availability, setAvailability] = useState<Record<string, string>>({});
@@ -48,14 +49,12 @@ export function BookingModal({ isOpen, onClose, guideId, guideName, ratePerPerso
             setIsValidDate(true); // Default to available if not set
         }
     };
-    const [duration, setDuration] = useState("3");
-    const [guests, setGuests] = useState("2");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [step, setStep] = useState<'details' | 'payment' | 'success'>('details');
     const [bookingId, setBookingId] = useState("");
     const [clientSecret, setClientSecret] = useState("");
 
-    const totalCost = ratePerPerson * parseInt(duration) * parseInt(guests);
+    const totalCost = packagePrice;
 
     const handleConfirm = async () => {
         if (!date || !time) {
@@ -75,8 +74,8 @@ export function BookingModal({ isOpen, onClose, guideId, guideName, ratePerPerso
                     date,
                     time,
                     price: totalCost,
-                    guests: parseInt(guests),
-                    tourType: 'Custom Tour'
+                    guests: 1,
+                    tourType: packageName
                 });
 
                 if (res && res.id) {
@@ -98,11 +97,11 @@ export function BookingModal({ isOpen, onClose, guideId, guideName, ratePerPerso
                         touristName: currentUser?.name || 'Guest',
                         date,
                         time,
-                        duration: parseInt(duration),
+                        duration: 0,
                         totalPrice: totalCost,
                         status: 'pending', // Will be confirmed after payment
                         location: 'South India', // Placeholder or pass from props
-                        tourType: 'Custom Tour'
+                        tourType: packageName
                     });
                 });
             }
@@ -244,49 +243,11 @@ export function BookingModal({ isOpen, onClose, guideId, guideName, ratePerPerso
                                 </div>
                             </div>
 
-                            {/* Duration & Guests */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                        <Clock className="w-3 h-3 text-primary" /> Duration
-                                    </Label>
-                                    <Select value={duration} onValueChange={setDuration}>
-                                        <SelectTrigger className="border-gray-200 focus:ring-primary rounded-lg">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="2">2 Hours</SelectItem>
-                                            <SelectItem value="3">3 Hours</SelectItem>
-                                            <SelectItem value="4">4 Hours</SelectItem>
-                                            <SelectItem value="6">6 Hours</SelectItem>
-                                            <SelectItem value="8">Full Day</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                        <Users className="w-3 h-3 text-primary" /> Guests
-                                    </Label>
-                                    <Select value={guests} onValueChange={setGuests}>
-                                        <SelectTrigger className="border-gray-200 focus:ring-primary rounded-lg">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="1">1 Person</SelectItem>
-                                            <SelectItem value="2">2 People</SelectItem>
-                                            <SelectItem value="3">3 People</SelectItem>
-                                            <SelectItem value="4">4 People</SelectItem>
-                                            <SelectItem value="5">5+ Group</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
                             {/* Summary Card */}
                             <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-600">Total Estimation</p>
-                                    <p className="text-xs text-gray-500 mt-1">₹{ratePerPerson} x {duration}h x {guests}p</p>
+                                    <p className="text-sm font-medium text-gray-600">Package Selected</p>
+                                    <p className="text-xs text-gray-500 mt-1">{packageName}</p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-3xl font-bold text-primary font-heading tracking-tight">₹{totalCost}</p>

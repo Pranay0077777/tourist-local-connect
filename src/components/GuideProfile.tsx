@@ -36,6 +36,7 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
     const [guide, setGuide] = useState<Guide | null>(null);
     const [loading, setLoading] = useState(true);
     const [isBookingOpen, setIsBookingOpen] = useState(false);
+    const [selectedPackage, setSelectedPackage] = useState<any>(null);
 
     const [reviews, setReviews] = useState<Review[]>([]);
 
@@ -125,9 +126,37 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
         onNavigate('messages', { guideId: guide.id });
     };
 
-    // ... (rest of code)
+    const getGuidePlans = (id: string) => {
+        // Base hash for assigning price tiers
+        const priceHash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        
+        let miniPrice, explorerPrice, fullPrice;
+        if (priceHash % 3 === 0) {
+            // High tier
+            miniPrice = 599; explorerPrice = 1199; fullPrice = 1799;
+        } else if (priceHash % 3 === 1) {
+            // Low tier
+            miniPrice = 399; explorerPrice = 799; fullPrice = 1399;
+        } else {
+            // Medium tier
+            miniPrice = 499; explorerPrice = 999; fullPrice = 1599;
+        }
 
+        const ALL_PLANS = [
+            { id: 'mini', name: 'Mini Tour', places: '2 Places', price: miniPrice },
+            { id: 'explorer', name: 'Explorer Tour', places: '4 Places', price: explorerPrice },
+            { id: 'full', name: 'Full Day', places: 'Up to 6 Places', price: fullPrice }
+        ];
 
+        // Secondary hash for assigning which packages they offer
+        const typeHash = id.split('').reduce((acc, char, idx) => acc + char.charCodeAt(0) * (idx + 1), 0);
+        
+        if (typeHash % 3 === 0) return [ALL_PLANS[0]]; // Mini only
+        if (typeHash % 3 === 1) return [ALL_PLANS[1], ALL_PLANS[2]]; // Explorer + Full
+        return [ALL_PLANS[0], ALL_PLANS[1]]; // Mini + Explorer
+    };
+
+    const offeredPlans = guide ? getGuidePlans(guide.id) : [];
 
     return (
         <div className="min-h-screen bg-gray-50 pb-24 md:pb-12">
@@ -191,9 +220,23 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
                                 </div>
 
                                 <div className="space-y-4 pt-4 border-t border-gray-100">
-                                    <div className="flex justify-between items-baseline px-2">
-                                        <span className="text-gray-500">Rate</span>
-                                        <span className="text-3xl font-bold text-primary">₹{guide.hourlyRate}<span className="text-base font-normal text-gray-400">/hr</span></span>
+                                    <div className="px-2">
+                                        <span className="text-gray-500 font-medium mb-3 block">Available Packages</span>
+                                        <div className="space-y-3">
+                                            {offeredPlans.map(plan => (
+                                                <div 
+                                                    key={plan.id} 
+                                                    onClick={() => { setSelectedPackage(plan); setIsBookingOpen(true); }}
+                                                    className="flex justify-between items-center p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group"
+                                                >
+                                                    <div>
+                                                        <p className="font-bold text-[13px] text-gray-900 leading-tight group-hover:text-primary transition-colors">{plan.name}</p>
+                                                        <p className="text-[11px] text-gray-500 font-medium mt-0.5">{plan.places}</p>
+                                                    </div>
+                                                    <span className="font-bold text-lg text-primary">₹{plan.price}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <Button
@@ -208,7 +251,7 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
                                         <Button
                                             size="lg"
                                             className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/20"
-                                            onClick={() => setIsBookingOpen(true)}
+                                            onClick={() => { setSelectedPackage(offeredPlans[0]); setIsBookingOpen(true); }}
                                         >
                                             Book Now
                                         </Button>
@@ -442,13 +485,13 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
             {/* Mobile Sticky Booking Bar */}
             <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 z-30 lg:hidden flex items-center justify-between shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">
                 <div>
-                    <p className="text-xs text-gray-500 font-medium">Starting from</p>
-                    <p className="text-2xl font-bold text-primary">₹{guide.hourlyRate}<span className="text-sm text-gray-400 font-normal">/hr</span></p>
+                    <p className="text-xs text-gray-500 font-medium">Packages from</p>
+                    <p className="text-2xl font-bold text-primary">₹{offeredPlans[0]?.price || 599}</p>
                 </div>
                 <Button
                     size="lg"
                     className="bg-accent hover:bg-accent/90 text-white font-bold px-8 rounded-xl shadow-lg shadow-accent/20"
-                    onClick={() => setIsBookingOpen(true)}
+                    onClick={() => { setSelectedPackage(offeredPlans[0]); setIsBookingOpen(true); }}
                 >
                     Book Now
                 </Button>
@@ -457,7 +500,8 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
             <BookingModal
                 guideId={guide.id}
                 guideName={guide.name}
-                ratePerPerson={guide.hourlyRate}
+                packagePrice={selectedPackage?.price || offeredPlans[0]?.price || 599}
+                packageName={selectedPackage?.name || offeredPlans[0]?.name || "Mini Tour"}
                 isOpen={isBookingOpen}
                 onClose={() => setIsBookingOpen(false)}
                 currentUser={currentUser}

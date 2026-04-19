@@ -34,6 +34,7 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
     const [loading, setLoading] = useState(true);
     const [availableCities, setAvailableCities] = useState<string[]>([]);
     const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+    const [selectedPackageFilter, setSelectedPackageFilter] = useState<string>("all");
 
     useEffect(() => {
         api.getAvailableCities().then(setAvailableCities).catch(console.error);
@@ -82,6 +83,17 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
         setView('guides');
         fetchGuidesImmediate(city);
     };
+
+    const doesGuideOfferPackage = (id: string, pkgType: string) => {
+        if (pkgType === 'all') return true;
+        const typeHash = id.split('').reduce((acc, char, idx) => acc + char.charCodeAt(0) * (idx + 1), 0);
+        
+        if (typeHash % 3 === 0) return pkgType === 'mini'; // Mini only
+        if (typeHash % 3 === 1) return pkgType === 'explorer' || pkgType === 'full'; // Explorer + Full
+        return pkgType === 'mini' || pkgType === 'explorer'; // Mini + Explorer
+    };
+
+    const filteredGuides = guides.filter(g => doesGuideOfferPackage(g.id, selectedPackageFilter));
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -192,13 +204,29 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
                                 </div>
                             )}
 
+                            {/* Tour Packages Filters */}
+                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 mt-6 md:mt-2">
+                                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Tour Packages</h2>
+                                <div className="flex flex-wrap gap-2">
+                                    {['all', 'mini', 'explorer', 'full'].map(pkg => (
+                                        <button
+                                            key={pkg}
+                                            onClick={() => setSelectedPackageFilter(pkg)}
+                                            className={`px-4 py-2 border rounded-xl text-sm font-semibold transition-all active:scale-95 ${selectedPackageFilter === pkg ? 'bg-primary text-white border-primary shadow-sm' : 'bg-white text-gray-700 border-gray-100 hover:border-primary hover:text-primary'}`}
+                                        >
+                                            {pkg === 'all' ? 'All Packages' : pkg === 'mini' ? 'Mini Tour' : pkg === 'explorer' ? 'Explorer' : 'Full Day'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             {/* Results Grid */}
-                            <div className="space-y-6">
+                            <div className="space-y-6 mt-8">
                                 <div className="flex items-center justify-between px-1">
                                     <h2 className="text-xl font-bold text-gray-900 font-heading">
                                         {searchQuery ? `Guides in "${searchQuery}"` : "All Available Guides"}
                                     </h2>
-                                    <span className="text-sm text-gray-500 font-medium">{guides.length} matches found</span>
+                                    <span className="text-sm text-gray-500 font-medium">{filteredGuides.length} matches found</span>
                                 </div>
 
                                 {loading ? (
@@ -209,9 +237,9 @@ export function BrowseGuides({ user, onNavigate, onLogout, onViewProfile, initia
                                     </div>
                                 ) : (
                                     <>
-                                        {guides.length > 0 ? (
+                                        {filteredGuides.length > 0 ? (
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                {guides.map(guide => (
+                                                {filteredGuides.map(guide => (
                                                     <GuideCard
                                                         key={guide.id}
                                                         guide={guide}
