@@ -23,6 +23,11 @@ export function GuideCalendar({ guideId, isEditable = false, className = "" }: G
     const [loading, setLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const maxMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+
     useEffect(() => {
         const fetchAvailability = async () => {
             setLoading(true);
@@ -31,7 +36,6 @@ export function GuideCalendar({ guideId, isEditable = false, className = "" }: G
                 setAvailability(data);
             } catch (error) {
                 console.error("Failed to load availability:", error);
-                // Don't toast on every profile load if read-only
                 if (isEditable) toast.error("Failed to load availability");
             } finally {
                 setLoading(false);
@@ -50,7 +54,12 @@ export function GuideCalendar({ guideId, isEditable = false, className = "" }: G
 
     const { daysInMonth, firstDayOfMonth } = getDaysInMonth(currentDate);
 
+    const isAtMinMonth = currentDate.getFullYear() === minMonth.getFullYear() && currentDate.getMonth() === minMonth.getMonth();
+    const isAtMaxMonth = currentDate.getFullYear() === maxMonth.getFullYear() && currentDate.getMonth() === maxMonth.getMonth();
+
     const handleMonthChange = (offset: number) => {
+        if (offset < 0 && isAtMinMonth) return;
+        if (offset > 0 && isAtMaxMonth) return;
         const newDate = new Date(currentDate);
         newDate.setMonth(newDate.getMonth() + offset);
         setCurrentDate(newDate);
@@ -60,6 +69,9 @@ export function GuideCalendar({ guideId, isEditable = false, className = "" }: G
         if (!isEditable) return;
 
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        // Don't allow editing past dates
+        if (date < today) return;
+
         const dateString = date.toISOString().split('T')[0];
 
         const currentStatus = availability[dateString] || 'available';
@@ -109,18 +121,18 @@ export function GuideCalendar({ guideId, isEditable = false, className = "" }: G
                     {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 </CardTitle>
                 <div className="flex gap-1">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMonthChange(-1)}>
-                        <ChevronLeft className="w-4 h-4" />
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMonthChange(-1)} disabled={isAtMinMonth}>
+                        <ChevronLeft className={`w-4 h-4 ${isAtMinMonth ? 'opacity-30' : ''}`} />
                     </Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMonthChange(1)}>
-                        <ChevronRight className="w-4 h-4" />
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMonthChange(1)} disabled={isAtMaxMonth}>
+                        <ChevronRight className={`w-4 h-4 ${isAtMaxMonth ? 'opacity-30' : ''}`} />
                     </Button>
                 </div>
             </CardHeader>
             <CardContent className="px-4 sm:px-6">
                 <div className="grid grid-cols-7 mb-2 text-center text-xs font-semibold text-gray-400">
-                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
-                        <div key={day} className="py-1">{day}</div>
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
+                        <div key={`${day}-${idx}`} className="py-1">{day}</div>
                     ))}
                 </div>
 
@@ -135,23 +147,25 @@ export function GuideCalendar({ guideId, isEditable = false, className = "" }: G
                         const dateString = dateDate.toISOString().split('T')[0];
                         const status = availability[dateString] || 'available';
                         const isToday = new Date().toDateString() === dateDate.toDateString();
+                        const isPast = dateDate < today;
 
                         return (
                             <button
                                 key={day}
-                                disabled={!isEditable}
+                                disabled={!isEditable || isPast}
                                 onClick={() => toggleStatus(day)}
                                 className={`aspect-square rounded-lg border flex flex-col items-center justify-center gap-0.5 transition-all relative group
-                                ${status === 'available' ? 'border-green-100 bg-green-50/30' :
+                                ${isPast ? 'border-gray-100 bg-gray-100/50 opacity-40 cursor-not-allowed' :
+                                    status === 'available' ? 'border-green-100 bg-green-50/30' :
                                         status === 'busy' ? 'border-red-100 bg-red-50/30' :
                                             'border-gray-100 bg-gray-50'}
-                                ${isEditable ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'}
+                                ${isEditable && !isPast ? 'hover:scale-105 active:scale-95 cursor-pointer' : isPast ? 'cursor-not-allowed' : 'cursor-default'}
                                 ${isToday ? 'ring-1 ring-primary ring-offset-1' : ''}
                             `}
                             >
-                                <span className={`text-xs font-bold ${status === 'off' ? 'text-gray-400' : 'text-gray-900'}`}>{day}</span>
-                                <StatusIcon status={status} />
-                                {isEditable && <div className="absolute inset-0 bg-black/0 hover:bg-black/5 rounded-lg transition-colors" />}
+                                <span className={`text-xs font-bold ${isPast ? 'text-gray-300' : status === 'off' ? 'text-gray-400' : 'text-gray-900'}`}>{day}</span>
+                                {!isPast && <StatusIcon status={status} />}
+                                {isEditable && !isPast && <div className="absolute inset-0 bg-black/0 hover:bg-black/5 rounded-lg transition-colors" />}
                             </button>
                         );
                     })}

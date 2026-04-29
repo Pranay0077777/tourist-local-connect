@@ -171,27 +171,19 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
         try {
             let imageUrl = undefined;
             if (selectedFile) {
-                const formData = new FormData();
-                formData.append('image', selectedFile);
-
                 console.log("Community: Attempting image upload...");
-                const uploadRes = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!uploadRes.ok) {
-                    const errorText = await uploadRes.text();
-                    console.error("Upload failed:", errorText);
-                    throw new Error(`Upload failed: ${uploadRes.status}`);
-                }
-
-                const uploadData = await uploadRes.json();
-                console.log("Community: Upload successful:", uploadData);
-                if (uploadData.success) {
-                    imageUrl = uploadData.url;
-                } else {
-                    throw new Error(uploadData.error || "Upload failed");
+                try {
+                    const uploadData = await api.uploadImage(selectedFile);
+                    console.log("Community: Upload successful:", uploadData);
+                    if (uploadData.success) {
+                        imageUrl = uploadData.url;
+                    } else {
+                        throw new Error(uploadData.error || "Upload failed");
+                    }
+                } catch (uploadErr: any) {
+                    console.error("Upload failed:", uploadErr);
+                    toast.error(`Image upload failed: ${uploadErr.message}`);
+                    // Continue posting without image if upload fails
                 }
             }
 

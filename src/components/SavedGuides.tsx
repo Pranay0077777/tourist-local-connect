@@ -95,6 +95,13 @@ export function SavedGuides({ user, onNavigate, onLogout, onViewProfile }: Saved
                                     key={guide.id}
                                     guide={guide}
                                     user={user}
+                                    isFavorite={true}
+                                    onToggleFavorite={(guideId: string, newStatus: boolean) => {
+                                        if (!newStatus) {
+                                            // Remove from saved list immediately
+                                            setGuides(prev => prev.filter(g => g.id !== guideId));
+                                        }
+                                    }}
                                     onViewProfile={onViewProfile}
                                 />
                             ))

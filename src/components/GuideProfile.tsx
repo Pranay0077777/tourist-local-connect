@@ -15,7 +15,6 @@ import {
     ChevronLeft,
     Footprints,
     Lock,
-    Play,
     MessageSquare,
     ShieldCheck,
     Coffee,
@@ -258,28 +257,6 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
                                     </div>
                                     <p className="text-xs text-center text-gray-400">No payment required today</p>
 
-                                    {/* Audio Intro Feature */}
-                                    <div className="mt-4 pt-4 border-t border-gray-100">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-gray-500 mb-2">
-                                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                                <Play className="w-3 h-3 fill-current" />
-                                            </div>
-                                            Hear my Intro
-                                        </div>
-                                        {/* Fake Waveform */}
-                                        <div className="flex items-center gap-0.5 h-6">
-                                            {[...Array(20)].map((_, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="w-1 bg-primary/40 rounded-full animate-pulse"
-                                                    style={{
-                                                        height: `${Math.random() * 100}% `,
-                                                        animationDelay: `${i * 0.05} s`
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

@@ -559,10 +559,23 @@ export const api = {
     },
 
     addFavorite: async (userId: string, guideId: string) => {
-        // ALWAYS update local first for instant feedback (Offline-first / Backup Logic)
+        // Invalidate favorites cache so next fetch gets fresh data
+        delete favoritesCache[userId];
+
+        // Update localStorage silently (no session event to avoid flicker)
         try {
-            const { toggleFavorite } = await import("./localStorage");
-            toggleFavorite(userId, guideId);
+            const currentUserStr = localStorage.getItem('tlc_current_user');
+            if (currentUserStr) {
+                const currentUser = JSON.parse(currentUserStr);
+                if (currentUser.id === userId) {
+                    const favorites = currentUser.favorites || [];
+                    if (!favorites.includes(guideId)) {
+                        favorites.push(guideId);
+                        currentUser.favorites = favorites;
+                        localStorage.setItem('tlc_current_user', JSON.stringify(currentUser));
+                    }
+                }
+            }
         } catch (e) {
             console.error("Local favorite sync failed", e);
         }
@@ -581,10 +594,19 @@ export const api = {
     },
 
     removeFavorite: async (userId: string, guideId: string) => {
-        // ALWAYS update local first (Offline-first / Backup Logic)
+        // Invalidate favorites cache so next fetch gets fresh data
+        delete favoritesCache[userId];
+
+        // Update localStorage silently (no session event to avoid flicker)
         try {
-            const { toggleFavorite } = await import("./localStorage");
-            toggleFavorite(userId, guideId);
+            const currentUserStr = localStorage.getItem('tlc_current_user');
+            if (currentUserStr) {
+                const currentUser = JSON.parse(currentUserStr);
+                if (currentUser.id === userId) {
+                    currentUser.favorites = (currentUser.favorites || []).filter((id: string) => id !== guideId);
+                    localStorage.setItem('tlc_current_user', JSON.stringify(currentUser));
+                }
+            }
         } catch (e) {
             console.error("Local favorite sync failed", e);
         }
