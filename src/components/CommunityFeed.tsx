@@ -197,18 +197,28 @@ export function CommunityFeed({ user, onNavigate, onLogout }: CommunityFeedProps
             };
 
             console.log("Community: Creating post...", newPost);
-            const res = await fetch('/api/community/posts', {
+            
+            // Try to use the centralized API base if available, otherwise relative
+            const apiUrl = (window as any).__API_URL__ || ''; 
+            
+            const res = await fetch(`${apiUrl}/api/community/posts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPost)
             });
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || "Failed to create post");
+            let data;
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await res.json();
+            } else {
+                const text = await res.text();
+                throw new Error(`Server error: ${res.status}. ${text.substring(0, 50)}`);
             }
 
-            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to create post");
+            }
 
             if (data.success) {
                 toast.success("Posted successfully!");

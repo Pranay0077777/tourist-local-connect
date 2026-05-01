@@ -16,12 +16,13 @@ import {
     Users
 } from "lucide-react";
 
-import { type LocalUser, getUnreadCount } from "@/lib/localStorage";
+import { type LocalUser, getUnreadCount, addNotification } from "@/lib/localStorage";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useTheme } from "./theme-provider";
 import { isAdmin } from "@/lib/adminUtils";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { api } from "@/lib/api";
+import { socket } from "@/lib/socket";
 
 interface RoleAwareHeaderProps {
     user: LocalUser;
@@ -55,8 +56,33 @@ export function RoleAwareHeader({ user, currentPage, onNavigate, onLogout }: Rol
         checkUnread();
         // Poll for updates (in case messages come in background or from other tab simulation)
         const interval = setInterval(checkUnread, 2000);
-        return () => clearInterval(interval);
-    }, [user.id]);
+
+        // Global Socket Listeners for Notifications
+        socket.connect();
+        
+        const handleBookingCreated = (booking: any) => {
+            const isRelevant = isGuide
+                ? (booking.guideId === user.id || booking.guide_id === user.id)
+                : (booking.userId === user.id || booking.touristId === user.id);
+
+            if (isRelevant && isGuide && booking.status === 'pending') {
+                addNotification({
+                    userId: user.id,
+                    type: 'booking_request',
+                    title: 'New Booking Request',
+                    message: `A tourist has booked a tour with you!`,
+                    link: 'myBookings'
+                });
+            }
+        };
+
+        socket.on('booking_created', handleBookingCreated);
+
+        return () => {
+            clearInterval(interval);
+            socket.off('booking_created', handleBookingCreated);
+        };
+    }, [user.id, isGuide]);
 
     const NavItem = ({ page, icon: Icon, label, badge }: { page: string; icon: any; label: string; badge?: number }) => (
         <button
