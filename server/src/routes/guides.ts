@@ -97,7 +97,8 @@ router.get('/', async (req, res) => {
             joinedDate: g.joined_date,
             availability: typeof g.availability === 'string' ? JSON.parse(g.availability || '[]') : g.availability,
             itinerary: typeof g.itinerary === 'string' ? JSON.parse(g.itinerary || '[]') : g.itinerary,
-            hiddenGems: typeof g.hidden_gems === 'string' ? JSON.parse(g.hidden_gems || '[]') : g.hidden_gems
+            hiddenGems: typeof g.hidden_gems === 'string' ? JSON.parse(g.hidden_gems || '[]') : g.hidden_gems,
+            packages: typeof g.packages === 'string' ? JSON.parse(g.packages || '["mini", "explorer", "full"]') : g.packages || ['mini', 'explorer', 'full']
         }));
 
         // In-memory filtering for complex JSON arrays (to keep SQL simple/generic)
@@ -145,7 +146,8 @@ router.get('/:id', async (req, res) => {
                 joinedDate: guide.joined_date,
                 availability: typeof guide.availability === 'string' ? JSON.parse(guide.availability || '[]') : guide.availability,
                 itinerary: typeof guide.itinerary === 'string' ? JSON.parse(guide.itinerary || '[]') : guide.itinerary,
-                hiddenGems: typeof guide.hidden_gems === 'string' ? JSON.parse(guide.hidden_gems || '[]') : guide.hidden_gems
+                hiddenGems: typeof guide.hidden_gems === 'string' ? JSON.parse(guide.hidden_gems || '[]') : guide.hidden_gems,
+                packages: typeof guide.packages === 'string' ? JSON.parse(guide.packages || '["mini", "explorer", "full"]') : guide.packages || ['mini', 'explorer', 'full']
             });
         } else {
             res.status(404).json({ error: 'Guide not found' });

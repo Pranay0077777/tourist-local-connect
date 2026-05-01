@@ -147,12 +147,17 @@ export function GuideProfile({ guideId, onBack, currentUser, onNavigate }: Guide
             { id: 'full', name: 'Full Day', places: 'Up to 6 Places', price: fullPrice }
         ];
 
-        // Secondary hash for assigning which packages they offer
-        const typeHash = id.split('').reduce((acc, char, idx) => acc + char.charCodeAt(0) * (idx + 1), 0);
+        // Use the packages selected by the guide in their profile, default to all if none selected or missing
+        const selectedPackageIds = (guide as any)?.packages || ['mini', 'explorer', 'full'];
         
-        if (typeHash % 3 === 0) return [ALL_PLANS[0]]; // Mini only
-        if (typeHash % 3 === 1) return [ALL_PLANS[1], ALL_PLANS[2]]; // Explorer + Full
-        return [ALL_PLANS[0], ALL_PLANS[1]]; // Mini + Explorer
+        let filteredPlans = ALL_PLANS.filter(plan => selectedPackageIds.includes(plan.id));
+        
+        // Safety fallback if somehow empty
+        if (filteredPlans.length === 0) {
+            filteredPlans = ALL_PLANS;
+        }
+        
+        return filteredPlans;
     };
 
     const offeredPlans = guide ? getGuidePlans(guide.id) : [];

@@ -44,7 +44,8 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
         specialties: parseArray(user.specialties),
         languages: parseArray(user.languages),
         experience: user.experience || "",
-        preferredLanguage: user.preferences?.language || "en"
+        preferredLanguage: user.preferences?.language || "en",
+        packages: parseArray((user as any).packages) || ['mini', 'explorer', 'full']
     });
 
     useEffect(() => {
@@ -56,7 +57,8 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                         hourlyRate: guide.hourlyRate,
                         specialties: parseArray(guide.specialties),
                         languages: parseArray(guide.languages),
-                        experience: guide.experience || ""
+                        experience: guide.experience || "",
+                        packages: parseArray((guide as any).packages).length > 0 ? parseArray((guide as any).packages) : ['mini', 'explorer', 'full']
                     }));
                     if ((guide as any).verificationStatus) {
                         setVerificationStatus((guide as any).verificationStatus as any);
@@ -119,11 +121,12 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                 specialties: formData.specialties,
                 languages: formData.languages,
                 experience: formData.experience,
+                packages: formData.packages,
                 preferences: {
                     ...user.preferences,
                     language: formData.preferredLanguage
                 }
-            };
+            } as any;
 
             // Call API
             api.updateUser(user.id, {
@@ -135,7 +138,8 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                 hourly_rate: formData.hourlyRate,
                 specialties: formData.specialties,
                 languages: formData.languages,
-                experience: formData.experience
+                experience: formData.experience,
+                packages: formData.packages
             }).catch(error => {
                 console.error("Delayed error handle: Failed to update profile on server", error);
                 toast.error("Profile update failed on server. Reverting...");
@@ -396,6 +400,40 @@ export function ProfileSettings({ user, onNavigate, onLogout }: ProfileSettingsP
                                                 </Button>
                                             )}
                                         </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="pt-6 border-t border-gray-100">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-4">Tour Packages Offered</h3>
+                                    <p className="text-sm text-gray-500 mb-4">Select the types of tours you are comfortable providing. These will be visible on your profile.</p>
+                                    
+                                    <div className="space-y-3">
+                                        {[
+                                            { id: 'mini', name: 'Mini Tour', desc: 'Shorter duration, typically 2 places' },
+                                            { id: 'explorer', name: 'Explorer Tour', desc: 'Medium duration, typically 4 places' },
+                                            { id: 'full', name: 'Full Day', desc: 'Extensive tour, up to 6 places' }
+                                        ].map(pkg => (
+                                            <label key={pkg.id} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors">
+                                                <div className="flex items-center h-5 mt-1">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={formData.packages.includes(pkg.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setFormData(prev => ({ ...prev, packages: [...prev.packages, pkg.id] }));
+                                                            } else {
+                                                                setFormData(prev => ({ ...prev, packages: prev.packages.filter(p => p !== pkg.id) }));
+                                                            }
+                                                        }}
+                                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-sm text-gray-900">{pkg.name}</p>
+                                                    <p className="text-xs text-gray-500 mt-0.5">{pkg.desc}</p>
+                                                </div>
+                                            </label>
+                                        ))}
                                     </div>
                                 </div>
                             </div>

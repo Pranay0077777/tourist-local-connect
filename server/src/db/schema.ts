@@ -120,4 +120,6 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_guides_location ON guides(location);
 CREATE INDEX IF NOT EXISTS idx_users_city ON users(city);
 ALTER TABLE messages ADD COLUMN translated_text TEXT;
+ALTER TABLE users ADD COLUMN packages TEXT;
+ALTER TABLE guides ADD COLUMN packages TEXT;
 `;

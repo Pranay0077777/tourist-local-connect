@@ -10,7 +10,7 @@ router.patch('/:id', async (req, res) => {
         const updates = req.body;
 
         // Allowed fields to update
-        const allowed = ['name', 'phone', 'city', 'bio', 'avatar', 'preferences', 'favorites', 'hourly_rate', 'languages', 'specializations', 'dob', 'location', 'aadhar_number'];
+        const allowed = ['name', 'phone', 'city', 'bio', 'avatar', 'preferences', 'favorites', 'hourly_rate', 'languages', 'specializations', 'dob', 'location', 'aadhar_number', 'packages'];
         const keys = Object.keys(updates).filter(k => allowed.includes(k));
 
         if (keys.length === 0) {
@@ -30,7 +30,7 @@ router.patch('/:id', async (req, res) => {
         const info = await db.exec(`UPDATE users SET ${setClause} WHERE id = ?`, values);
 
         // SYNC WITH GUIDES TABLE
-        const guideFields = ['name', 'avatar', 'location', 'bio', 'hourly_rate', 'specialties', 'languages', 'experience'];
+        const guideFields = ['name', 'avatar', 'location', 'bio', 'hourly_rate', 'specialties', 'languages', 'experience', 'packages'];
         const gKeys = Object.keys(updates).filter(k => guideFields.includes(k) || (k === 'city' && guideFields.includes('location')));
 
         if (gKeys.length > 0) {
